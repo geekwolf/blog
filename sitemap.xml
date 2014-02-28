@@ -1,6 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
+        <loc>
+            http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/
+        </loc>
+        <lastmod>2014-02-28T20:26:50+08:00</lastmod>
+    </url>
+    <url>
         <loc>http://geekwolf.github.io/blog/2014/02/28/mysqlfen-qu-guan-li/</loc>
         <lastmod>2014-02-28T20:19:03+08:00</lastmod>
     </url>
@@ -10,11 +16,11 @@
     </url>
     <url>
         <loc>http://geekwolf.github.io/blog/archives/</loc>
-        <lastmod>2014-02-28T19:48:37+08:00</lastmod>
+        <lastmod>2014-02-28T20:26:50+08:00</lastmod>
     </url>
     <url>
         <loc>http://geekwolf.github.io/</loc>
-        <lastmod>2014-02-28T19:48:37+08:00</lastmod>
+        <lastmod>2014-02-28T20:26:50+08:00</lastmod>
     </url>
     <url>
         <loc>http://geekwolf.github.io/404.html</loc>
