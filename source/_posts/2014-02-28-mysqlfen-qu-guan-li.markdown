@@ -1,0 +1,339 @@
+---
+layout: post
+title: "Mysql分区管理"
+date: 2014-02-28 16:06:25 +0800
+comments: true
+categories: [Mysql]
+keywords: Mysql分区表,Partition,Mysql
+description: Mysql分区管理基本操作
+---
+#####初探：
+   很长时间没写博客了，这两天一直在学习Mysql分区，总结下:<br/>
+  Mysql支持水平分区，并不支持垂直分区;<br/>
+  **水平分区**：指将同一表中不同行的记录分配到不同的物理文件中；<br/>
+  **垂直分区**：指将同一表中不同列的记录分配到不同的物理文件中；<br/>
+  其中CSV、FEDORATED、MERGE等引擎不支持分区，MYISAM、InnoDB、NDB等引擎支持分区<br/>
+ 
+#####目的：
+  将一个表或索引分解为多个更小、更可管理的部分，从逻辑上讲，只有一个表或者索引，但是物理上这个表或者索引可能由数十个物理分区组成；没个分区都是独立的对象，可以独自处理，也可以作为一个更大对象的一部分进行处理（如果分区表很大，亦可以将分区分配到不同的磁盘上去）；在执行查询的时候，优化器会根据分区定义过滤哪些没有我们需要数据的分区，这样查询就无须全表扫描所有分区，只查找包含需要数据的分区即可
+
+#####适用场景：
+1、表非常大以至于无法全部都放到内存，或者只在表的最后部分有热点数据，其他均为历史数据
+2、分区表数据更容易维护（可独立对分区进行优化、检查、修复及批量删除大数据可以采用drop分区的形式等）
+3、分区表的数据可以分布在不同的物理设备上，从而高效地利用多个硬件设备
+4、分区表可以避免某些特殊的瓶颈（ps: InnoDB的单个索引的互斥访问、ext3文件系统的inode锁竞争等）
+5、可以备份和恢复独立的分区，非常适用于大数据集的场景
+<!--more-->
+#####分区表限制：
+
+1. 单表最多支持1024个分区
+2. MySQL5.1只能对数据表的整型列进行分区，或者数据列可以通过分区函数转化成整型列;MySQL5.5的RANGE LIST类型可以直接使用列进行分区
+3. 如果分区字段中有主键或唯一索引的列，那么所有的主键列和唯一索引列都必须包含进来
+4. 分区表无法使用外键约束
+5. 分区必须使用相同的Engine
+6. 对于MyISAM分区表，不能在使用LOAD INDEX INTO CACHE操作
+7. 对于MyISAM分区表，使用时会打开更多的文件描述符（单个分区是一个独立的文件）
+
+#####分区策略：
+1. 全量扫描数据，不需要任何索引：通过where条件大概定位哪个分区，必须将查询所需要扫描的分区个数限制在很小的数量
+2. 建立分区索引，分离热点：如将明显的热点数据分离到一个分区，使其尽量缓存到内存中，这样就能充分使用索引和缓存</br>
+**注意**：以上策略均以查询得到过滤，丢掉额外的分区，分区本身不产生额外的代价为准则】
+
+#####分区表使用过程的坑坑：
+ 
+1.  NULL值会使分区过滤无效: <br/>
+分表的表达式的值可以是NULL，第一个分区为特殊分区存放NULL或者非法值<br/>
+ 如： PARTITION BY RANGE YEAR(order_date)进行分区，那么order_date为NULL或者非法值，记录存放在第一个分区:<br/>
+ WHERE order_date BETWEEN ‘2014-01-01’ AND ‘2014-01-31’查询时会检查两个分区：<br/>
+第一个分区及1月份分区，避免第一分区数据过大时造成查询代价过高，可以使用：建立第一分区专门存放order_date为NULL和非法值记录
+ PARTITION p_nulls VALUES LESS THAN(0)<br/>
+ MySQL5.5以后可以才用一下语法解决问题：
+ PARTITION BY RANGE COLUMNS(order_date)
+
+2.分区列和索引列不匹配<br/>
+   此种情况下查询无法进行分区过滤，分区失效除非查询中包含了可以过滤分区的条件
+
+3.RANGE类型分区随着分区数量增加会对MYSQL额外增加查询分区定义列表（符合条件行在哪个分区）的压力，尽量限制适当的分区数量;key和hash类型分区不存在此问题
+
+4.重组分区或者类似alter语句可能会造成很大的开销<br/>
+   新建或者删除分区操作很快，重组分区或者类似ALTER语句操作会先创建一个临时的分区，将数据复制其中，然后在删除原分区
+
+#####分区表类型：
+ 
+1.RANGE分区：行数据基于属于一个给定连续区间的列值被放入分区<br/>
+&emsp;MySQL5.5开始支持RANGE COLUMNS的分区（引入Columns分区解决了MySQL 5.5版本之前RANGE分区和LIST分区只支持整数分区，从而导致需要额外的函数计算得到整数或者通过额外的转换表来转换为整数再分区的问题。Columns分区可以细分为RANGE Columns分区和LIST Columns分区，RANGE Columns分区和LIST Columns分区都支持整数、日期时间、字符串三大数据类型）
+ 
+2.LIST分区：类似于按RANGE分区，区别在于LIST分区是基于列值匹配一个离散值集合中的某个值来进行选择。<br>
+&emsp;MySQL5.5开始支持RANGE COLUMNS的分区
+3.HASH分区：根据用户自定义的表达式的返回值来进行分区，返回值不能为负数
+4.KEY分区：根据MySQLS数据库提供的哈希函数来进行分区
+【注：无论创建何种类型的分区，如果表中存在主键或唯一索引时，分区列必须是唯一索引的一个组成部分】
+ 
+ 
+#####分区相关查询：
+ 
+    查看当前数据库是否支持分区
+    mysql> show variables like '%partition%';
+    +---------------------------------------+-------+
+    | Variable_name | Value |
+    +---------------------------------------+-------+
+    | have_partitioning | YES |
+    | innodb_adaptive_hash_index_partitions | 1 |
+    +---------------------------------------+-------+
+    2 rows in set
+
+    查看创建分区表的CREATE语句
+
+    mysql>show create table operation_log;
+
+    查看表是否为分区表(Create_options)
+    mysql>show table status(当前库所有表状态)
+    mysql>show table status from lockrank like '%operation_log%';(lockrank库operation_log表状态)
+    *************************** 1. row ***************************
+    Table: operation_log
+    Create Table: CREATE TABLE `operation_log` (
+      `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `cid` mediumint(7) unsigned NOT NULL,
+      `accountid` mediumint(8) NOT NULL DEFAULT '0' ,
+      `flag` tinyint(1) unsigned NOT NULL DEFAULT '0',
+      `addtime` int(11) unsigned NOT NULL,
+      `device` tinyint(1) unsigned NOT NULL DEFAULT '1' ,
+      PRIMARY KEY (`id`,`addtime`),
+      KEY `idx_accountid_addtime` (`accountid`,`addtime`),
+      KEY `idx_accountid_flag` (`accountid`,`flag`),
+    ) ENGINE=InnoDB AUTO_INCREMENT=50951039 DEFAULT CHARSET=utf8 COMMENT='操作记录'
+    /*!50100 PARTITION BY RANGE (addtime)
+    (PARTITION `2013-05` VALUES LESS THAN (1370016000) ENGINE = InnoDB,
+     PARTITION `2013-06` VALUES LESS THAN (1372608000) ENGINE = InnoDB,
+     PARTITION `2013-07` VALUES LESS THAN (1375286400) ENGINE = InnoDB,
+     PARTITION `2013-08` VALUES LESS THAN (1377964800) ENGINE = InnoDB,
+     PARTITION `2013-09` VALUES LESS THAN (1380556800) ENGINE = InnoDB,
+     PARTITION `2013-10` VALUES LESS THAN (1383235200) ENGINE = InnoDB,
+     PARTITION `2013-11` VALUES LESS THAN (1385827200) ENGINE = InnoDB,
+     PARTITION `2013-12` VALUES LESS THAN (1388505600) ENGINE = InnoDB,
+     PARTITION `2014-01` VALUES LESS THAN (1391184000) ENGINE = InnoDB,
+     PARTITION `2014-02` VALUES LESS THAN (1393603200) ENGINE = InnoDB,
+     PARTITION `2014-03` VALUES LESS THAN (1396281600) ENGINE = InnoDB,
+     PARTITION `2014-04` VALUES LESS THAN (1398873600) ENGINE = InnoDB,
+     PARTITION `2014-05` VALUES LESS THAN (1401552000) ENGINE = InnoDB,
+     PARTITION `2014-06` VALUES LESS THAN (1404144000) ENGINE = InnoDB,
+     PARTITION `2014-07` VALUES LESS THAN (1406822400) ENGINE = InnoDB,
+     PARTITION `2014-08` VALUES LESS THAN (1409500800) ENGINE = InnoDB,
+     PARTITION `2014-09` VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */
+    1 row in set (0.00 sec)
+    
+    查看select如何使用分区
+    mysql> explain partitions select id,accountid,cid,flag from operation_log where addtime="1369362524" \G ;
+     *************************** 1. row ***************************
+       id: 1
+      select_type: SIMPLE
+    table: operation_log
+       partitions: 2013-05
+     type: ALL
+    possible_keys: NULL
+      key: NULL
+      key_len: NULL
+      ref: NULL
+     rows: 4384356
+    Extra: Using where
+    1 row in set (0.00 sec)
+    ``
+    分区表元数据统计表：INFORMATION_SCHEMA.PARTITIONS
+    查看分区表operation_log的分区信息
+    mysql> SELECT partition_name part, partition_expression expr, partition_description descr, table_rows FROM INFORMATION_SCHEMA.partitions WHERE TABLE_SCHEMA = schema() AND TABLE_NAME='operation_log';
+    +---------+---------+------------+------------+
+    | part| expr| descr | table_rows |
+    +---------+---------+------------+------------+
+    | 2013-05 | addtime | 1370016000 | 5999642 |
+    | 2013-06 | addtime | 1372608000 | 4579263 |
+    | 2013-07 | addtime | 1375286400 | 3223772 |
+    | 2013-08 | addtime | 1377964800 | 1995058 |
+    | 2013-09 | addtime | 1380556800 | 2497406 |
+    | 2013-10 | addtime | 1383235200 | 4106974 |
+    | 2013-11 | addtime | 1385827200 | 6209559 |
+    | 2013-12 | addtime | 1388505600 | 6415349 |
+    | 2014-01 | addtime | 1391184000 | 3953594 |
+    | 2014-02 | addtime | 1393603200 | 0 |
+    | 2014-03 | addtime | 1396281600 | 0 |
+    | 2014-04 | addtime | 1398873600 | 0 |
+    | 2014-05 | addtime | 1401552000 | 0 |
+    | 2014-06 | addtime | 1404144000 | 0 |
+    | 2014-07 | addtime | 1406822400 | 0 |
+    | 2014-08 | addtime | 1409500800 | 0 |
+    | 2014-09 | addtime | MAXVALUE | 0 |
+    +---------+---------+------------+------------+
+    17 rows in set (1.48 sec)
+
+
+#####创建分区操作
+    RANGE分区：
+    mysql> CREATE TABLE `operation_log` (
+     ->  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+     -> `cid` mediumint(7) unsigned NOT NULL,
+     -> `accountid` mediumint(8) NOT NULL DEFAULT '0' ,
+     ->  `flag` tinyint(1) unsigned NOT NULL DEFAULT '0',
+     ->  `addtime` int(11) unsigned NOT NULL,
+     -> `device` tinyint(1) unsigned NOT NULL DEFAULT '1' ,
+     ->  PRIMARY KEY (`id`,`addtime`),
+     -> KEY `idx_accountid_addtime` (`accountid`,`addtime`),
+     ->  KEY `idx_accountid_flag` (`accountid`,`flag`),
+     ->) ENGINE=InnoDB AUTO_INCREMENT=50951039 DEFAULT CHARSET=utf8 COMMENT='操作记录'
+     ->/*!50100 PARTITION BY RANGE (addtime)
+     ->(PARTITION `2013-05` VALUES LESS THAN (1370016000) ENGINE = InnoDB,
+     -> PARTITION `2013-06` VALUES LESS THAN (1372608000) ENGINE = InnoDB,
+     -> PARTITION `2013-07` VALUES LESS THAN (1375286400) ENGINE = InnoDB,
+     -> PARTITION `2013-08` VALUES LESS THAN (1377964800) ENGINE = InnoDB,
+     -> PARTITION `2013-09` VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */；
+    1 row in set (0.00 sec)
+    （ LESS THAN MAXVALUE考虑到可能的最大值）
+    
+    list分区
+    //这种方式失败
+    mysql> CREATE TABLE IF NOT EXISTS `list_part` (
+     ->   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+     ->   `province_id` int(2) NOT NULL DEFAULT 0 COMMENT '省',
+     ->   `name` varchar(50) NOT NULL DEFAULT '' COMMENT '名称',
+     ->   `sex` int(1) NOT NULL DEFAULT '0' COMMENT '0为男，1为女',
+     ->   PRIMARY KEY (`id`)
+     -> ) ENGINE=INNODB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1
+     -> PARTITION BY LIST (province_id) (
+     -> PARTITION p0 VALUES IN (1,2,3,4,5,6,7,8),
+     -> PARTITION p1 VALUES IN (9,10,11,12,16,21),
+     -> PARTITION p2 VALUES IN (13,14,15,19),
+     -> PARTITION p3 VALUES IN (17,18,20,22,23,24)
+     -> );
+    ERROR 1503 (HY000): A PRIMARY KEY must include all columns in the table's partitioning function
+    
+    //这种方式成功
+    mysql> CREATE TABLE IF NOT EXISTS `list_part` (
+     ->   `id` int(11) NOT NULL  COMMENT '用户ID',
+     ->   `province_id` int(2) NOT NULL DEFAULT 0 COMMENT '省',
+     ->   `name` varchar(50) NOT NULL DEFAULT '' COMMENT '名称',
+     ->   `sex` int(1) NOT NULL DEFAULT '0' COMMENT '0为男，1为女'
+     -> ) ENGINE=INNODB  DEFAULT CHARSET=utf8
+     -> PARTITION BY LIST (province_id) (
+     -> PARTITION p0 VALUES IN (1,2,3,4,5,6,7,8),
+     -> PARTITION p1 VALUES IN (9,10,11,12,16,21),
+     -> PARTITION p2 VALUES IN (13,14,15,19),
+     -> PARTITION p3 VALUES IN (17,18,20,22,23,24)
+     -> );
+    Query OK, 0 rows affected (0.33 sec)
+    上面的这个创建list分区时，如果有主銉的话，分区时主键必须在其中，不然就会报错。如果我不用主键，分区就创建成功了，一般情况下，一个张表肯定会有一个主键，这算是一个分区的局限性
+     
+    
+    hash分区
+    mysql> CREATE TABLE IF NOT EXISTS `hash_part` (
+     ->   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '评论ID',
+     ->   `comment` varchar(1000) NOT NULL DEFAULT '' COMMENT '评论',
+     ->   `ip` varchar(25) NOT NULL DEFAULT '' COMMENT '来源IP',
+     ->   PRIMARY KEY (`id`)
+     -> ) ENGINE=INNODB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1
+     -> PARTITION BY HASH(id)
+     -> PARTITIONS 3;
+    Query OK, 0 rows affected (0.06 sec)
+     
+    key分区 
+    mysql> CREATE TABLE IF NOT EXISTS `key_part` (
+     ->   `news_id` int(11) NOT NULL  COMMENT '新闻ID',
+     ->   `content` varchar(1000) NOT NULL DEFAULT '' COMMENT '新闻内容',
+     ->   `u_id` varchar(25) NOT NULL DEFAULT '' COMMENT '来源IP',
+     ->   `create_time` DATE NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT '时间'
+     -> ) ENGINE=INNODB  DEFAULT CHARSET=utf8
+     -> PARTITION BY LINEAR HASH(YEAR(create_time))
+     -> PARTITIONS 3;
+    Query OK, 0 rows affected (0.07 sec)
+ 
+**增加子分区操作：**
+
+子分区是分区表中每个分区的再次分割，子分区既可以使用HASH希分区，也可以使用KEY分区。这 也被称为复合分区（composite partitioning）。
+
+    1. 如果一个分区中创建了子分区，其他分区也要有子分区
+    2. 如果创建了了分区，每个分区中的子分区数必有相同
+    3. 同一分区内的子分区，名字不相同，不同分区内的子分区名子可以相同（5.1.50不适用）
+    
+     mysql> CREATE TABLE IF NOT EXISTS `sub_part` (
+     ->   `news_id` int(11) NOT NULL  COMMENT '新闻ID',
+     ->   `content` varchar(1000) NOT NULL DEFAULT '' COMMENT '新闻内容',
+     ->   `u_id` int(11) NOT NULL DEFAULT 0s COMMENT '来源IP',
+     ->   `create_time` DATE NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT '时间'
+     -> ) ENGINE=INNODB  DEFAULT CHARSET=utf8
+     -> PARTITION BY RANGE(YEAR(create_time))
+     -> SUBPARTITION BY HASH(TO_DAYS(create_time))(
+     -> PARTITION p0 VALUES LESS THAN (1990)(SUBPARTITION s0,SUBPARTITION s1,SUBPARTITION s2),
+     -> PARTITION p1 VALUES LESS THAN (2000)(SUBPARTITION s3,SUBPARTITION s4,SUBPARTITION good),
+     -> PARTITION p2 VALUES LESS THAN MAXVALUE(SUBPARTITION tank0,SUBPARTITION tank1,SUBPARTITION tank3)
+     -> );
+    Query OK, 0 rows affected (0.07 sec)
+    
+    
+**分区管理：**
+
+    增加分区操作（针对设置MAXVALUE）
+     range添加分区
+    mysql>alter table operation_log add  partition(partition `2013-10` values less than (1383235200));  --->适用于没有设置MAXVALUE的分区添加
+       ERROR 1481 (HY000):MAXVALUE can only be used in last partition definition
+    mysql>alter table operation_log REORGANIZE partition `2013-09` into (partition `2013-09` values less than (1380556800),partition `2013-10` values less than (1383235200),partition `2013-11` values less than maxvalue);
+     
+     list添加分区
+    mysql> alter table list_part add partition(partition p4 values in (25,26,28));
+    Query OK, 0 rows affected (0.01 sec)
+    Records: 0  Duplicates: 0  Warnings: 0
+    
+     hash重新分区
+    mysql> alter table list_part add partition(partition p4 values in (25,26,28));
+    Query OK, 0 rows affected (0.01 sec)
+    Records: 0  Duplicates: 0  Warnings: 0
+    
+     key重新分区
+    mysql> alter table key_part add partition partitions 4;
+    Query OK, 1 row affected (0.06 sec)//有数据也会被重新分配
+    Records: 1  Duplicates: 0  Warnings: 0
+    
+    子分区添加新分区，虽然我没有指定子分区，但是系统会给子分区命名的
+    mysql> alter table sub1_part add partition(partition p3 values less than MAXVALUE);
+    Query OK, 0 rows affected (0.02 sec)
+    Records: 0  Duplicates: 0  Warnings: 0
+
+
+**删除分区操作**
+
+
+    alter table user drop partition `2013-05`;
+
+#####分区表其他操作
+
+    重建分区(官方：与先drop所有记录然后reinsert是一样的效果；用于整理表碎片)
+    alter table operation_log rebuild partition `2014-01`;
+    重建多个分区
+    alter table operation_log rebuild partition `2014-01`,`2014-02`;
+    过程如下：
+    
+    pro
+    优化分区（如果删除了一个分区的大量记录或者对一个分区的varchar blob text数据类型的字段做了许多更新，此时可以对分区进行优化以回收未使用的空间和整理分区数据文件）
+    alter table operation_log  optimize  partition `2014-01`;
+    
+    优化的操作相当于check partition,analyze partition 和repair patition
+    
+    分析分区
+    alter table operation_log  analyze partition  `2014-01`;
+    
+    修复分区
+    alter table operation_log repair partition   `2014-01`;
+    
+    检查分区
+    alter table operation_log check  partition   `2014-01`;
+    
+**注释：**
+
+1. mysqlcheck、myisamchk并不支持分区表，analyze,check,optimize,rebuild,repair,truncate不支持子分区操作
+2. 在MySQL5.6中，可以使用清空一个分区数据：alter table operation_log  truncate partition   `2014-01`;
+3. 清空该分区表所有分区数据：alter table operation_log  truncate partition   all;
+
+
+**参考文档：**
+
+http://blog.51yip.com/mysql/1013.html<br>
+https://dev.mysql.com/doc/refman/5.6/en/partitioning-maintenance.html<br>
+http://dev.mysql.com/doc/refman/5.6/en/index.html
+
+

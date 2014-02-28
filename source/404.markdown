@@ -1,0 +1,20 @@
+---
+
+layout: page
+
+title: "404 Error"
+
+date: 2013-4-21 02:35
+
+comments: false
+
+sharing: false
+
+footer: false
+
+---
+![404](/images/404.jpg)
+<html>
+
+#######[返回首页](http://geekwolf.github.io)                       [返回上一页](javascript:history.go(-1) 
+     
