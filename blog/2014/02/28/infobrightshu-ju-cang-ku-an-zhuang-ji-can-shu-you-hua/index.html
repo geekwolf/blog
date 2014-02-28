@@ -5,14 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>文章归档 - Geekwolf's Blog</title>
+  <title>Infobright数据仓库安装及参数优化 - Geekwolf's Blog</title>
   <meta name="author" content="Geekwolf">
 
   
-  <meta name="description" content="文章归档 2014 Infobright数据仓库安装及参数优化
-Feb 28 2014 Mysql分区管理
-Feb 28 2014 posted in Mysql 关于我 屌丝运维男,兼Mysql DBA,RHCA,喜欢折腾开源项目，爱好旅游，喜欢和妹子一起吃饭~~ Sina围脖 最新文章 &hellip;">
-  
+  <meta name="description" content="inforbright数据仓库的安装部署及参数的调整优化">
+  <meta name="keywords" content="inforbright,数据仓库,warehouse">
 
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -20,7 +18,7 @@ Feb 28 2014 posted in Mysql 关于我 屌丝运维男,兼Mysql DBA,RHCA,喜欢�
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://geekwolf.github.io/blog/archives">
+  <link rel="canonical" href="http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Geekwolf's Blog" type="application/atom+xml">
@@ -69,46 +67,143 @@ Feb 28 2014 posted in Mysql 关于我 屌丝运维男,兼Mysql DBA,RHCA,喜欢�
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h4 class="entry-title">文章归档</h4>
+    
+      <h4 class="entry-title" align="center">Infobright数据仓库安装及参数优化</h4>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-28T19:39:19+08:00" pubdate data-updated="true">Feb 28<span>th</span>, 2014</time>
+        
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://geekwolf.github.io">Comments</a>
+        
+      </p>
     
   </header>
+
+
+<div class="entry-content"><h5>一、认知Infobright数据仓库</h5>
+
+<ol>
+<li>Infobright是开源的DATA Warehouse，可以作为Mysql的存储引擎（BRIGHTHOUSE）使用，select查询与Mysql无区别</li>
+<li>适用于基于Mysql架构下的OLAP，区分为ICE（社区版免费）和IEE（企业版商业授权）</li>
+<li>千万级的查询性能比MyISAM、InnoDB等快5-60倍，且数据量很大时，查询性能基本在同一个数量级，适合聚合查询（SUM,COUNT，AVG，GROUP BY）</li>
+<li>列式存储，无需建索引和分区，高压缩比40:1（官方数字）</li>
+<li>ICE和IEE版本的区别和限制<br>
+<a href="https://www.infobright.org/index.php/Learn-More/ICE_IEE_Comparison/">https://www.infobright.org/index.php/Learn-More/ICE_IEE_Comparison/</a></li>
+</ol>
+
+
+<h5>二、Infobright基本安装初始化</h5>
+
+<pre><code> wget http://www.infobright.org/downloads/ice/infobright-4.0.7-0-x86_64-ice.rpm
+ rpm -ivh infobright-4.0.7-0-x86_64-ice.rpm --prefix=/usr/local/
+
+ A.初始化数据库：
+ /usr/local/infobright/scripts/mysql_install_db --datadir=/data/data/ --basedir=/usr/local/infobright-4.0.7-x86_64/ --force
+   安装之后会生成
+  /etc/my-ib.cnf.inactive （主配置文件，下面两个暂不讨论）
+  /etc/my-ib-master.cnf
+  /etc/my-ib-slave.cnf
+  /etc/rc.d/init.d/mysqld-ib（启动脚本）
+  mv  /etc/my-ib.cnf.inactive /etc/my-ib.cnf
+  修改/etc/rc.d/init.d/mysqld-ib /etc/my-ib.cnf  的datadir basedir参数到指定位置
+  修改权限chown mysql.mysql /etc/my-ib*  /data/data /ibcache/cachedata
+
+ B.修改warehouse引擎配置文件
+  /data/data/brighthouse.ini
+
+ C.参数优化
+   CacheFolder = /ibcache/cachedata/
+   ServerMainHeapSize = 28000
+   ServerCompressedHeapSize = 4000
+   LoaderMainHeapSize = 800
+   ControlMessages = 3
+   KNFolder = BH_RSI_Repository
+   AllowMySQLQueryPath = 0
+</code></pre>
+
+<p><strong>注释：</strong><br>
+CacheFolder 临时数据目录，用于缓存处理查询的中间结果集，与Datadir相异为宜，可用空间大于20G<br>
+ServerMainHeapSize IB主线程内存，一般设置为物理内存一半；若可能尽量增加<br>
+ServerCompressedHeapSize  服务进程的压缩堆栈空间，存放压缩数据<br>
+LoaderMainHeapSize Bhloader数据导入缓冲区，随目标表的列数增加而调整，loader进程的堆栈空间，一般最大不超过800M<br>
+ControlMessages  控制盒查询日志的信息量级别（1-3之间）<br>
+KNFolder  知识网络目录，默认在datadir目录下<br>
+AllowMySQLQueryPath  是否支持Mysql原生的SQL查询，支持修改为1，否则0<br>
+启动infobright：service mysqld-ib start</p>
+
+<p><strong>ICE版本导入数据方式：<br></strong>
+BRIGHTHOUSE
+load data infile &lsquo;/data/data.txt&rsquo; into table t fields terminated by &lsquo; &rsquo;;</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
   
-  <div id="blog-archives">
+
+<span class="byline author vcard">Posted by <span class="fn">Geekwolf</span></span>
+
+      
+
+
+
+
+
 
 
 
   
-  <h2>2014</h2>
 
-<article>
+
+<time datetime="2014-02-28T19:39:19+08:00" pubdate data-updated="true">Feb 28<span>th</span>, 2014</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
   
-<h1><a href="/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/">Infobright数据仓库安装及参数优化</a></h1>
-<time datetime="2014-02-28T19:39:19+08:00" pubdate><span class='month'>Feb</span> <span class='day'>28</span> <span class='year'>2014</span></time>
-
-
-</article>
-
-
-
-<article>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/" data-via="" data-counturl="http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/" >Tweet</a>
   
-<h1><a href="/blog/2014/02/28/mysqlfen-qu-guan-li/">Mysql分区管理</a></h1>
-<time datetime="2014-02-28T16:06:25+08:00" pubdate><span class='month'>Feb</span> <span class='day'>28</span> <span class='year'>2014</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/mysql/'>Mysql</a></span>
-</footer>
-
-
-</article>
+  
+  
+  
 
 </div>
 
-  
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/02/28/mysqlfen-qu-guan-li/" title="Previous Post: Mysql分区管理">&laquo; Mysql分区管理</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h4>Comments</h4>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -181,7 +276,10 @@ Feb 28 2014 posted in Mysql 关于我 屌丝运维男,兼Mysql DBA,RHCA,喜欢�
       var disqus_shortname = 'geekwolf';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/';
+        var disqus_url = 'http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
