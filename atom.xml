@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-03-01T15:37:09+08:00</updated>
+  <updated>2014-03-01T16:50:00+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -12,6 +12,20 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[动画揭露货币系统真相]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/03/01/dong-hua-jie-lu-huo-bi-xi-tong-zhen-xiang/"/>
+    <updated>2014-03-01T16:48:31+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/03/01/dong-hua-jie-lu-huo-bi-xi-tong-zhen-xiang</id>
+    <content type="html"><![CDATA[<p><strong>动画揭露货币系统真相</strong></p>
+
+<iframe height=498 width=510 src="http://www.56.com/u22/v_OTk4NjQ5NjM.html" frameborder=0 allowfullscreen></iframe>
+
+
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Infobright数据仓库安装及参数优化]]></title>
