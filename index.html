@@ -118,41 +118,14 @@
  /usr/local/infobright/scripts/mysql_install_db --datadir=/data/data/ --basedir=/usr/local/infobright-4.0.7-x86_64/ --force
    安装之后会生成
   /etc/my-ib.cnf.inactive （主配置文件，下面两个暂不讨论）
-  /etc/my-ib-master.cnf
-  /etc/my-ib-slave.cnf
-  /etc/rc.d/init.d/mysqld-ib（启动脚本）
-  mv  /etc/my-ib.cnf.inactive /etc/my-ib.cnf
-  修改/etc/rc.d/init.d/mysqld-ib /etc/my-ib.cnf  的datadir basedir参数到指定位置
-  修改权限chown mysql.mysql /etc/my-ib*  /data/data /ibcache/cachedata
-
- B.修改warehouse引擎配置文件
-  /data/data/brighthouse.ini
-
- C.参数优化
-   CacheFolder = /ibcache/cachedata/
-   ServerMainHeapSize = 28000
-   ServerCompressedHeapSize = 4000
-   LoaderMainHeapSize = 800
-   ControlMessages = 3
-   KNFolder = BH_RSI_Repository
-   AllowMySQLQueryPath = 0
 </code></pre>
 
-<p><strong>注释：</strong><br>
-CacheFolder 临时数据目录，用于缓存处理查询的中间结果集，与Datadir相异为宜，可用空间大于20G<br>
-ServerMainHeapSize IB主线程内存，一般设置为物理内存一半；若可能尽量增加<br>
-ServerCompressedHeapSize  服务进程的压缩堆栈空间，存放压缩数据<br>
-LoaderMainHeapSize Bhloader数据导入缓冲区，随目标表的列数增加而调整，loader进程的堆栈空间，一般最大不超过800M<br>
-ControlMessages  控制盒查询日志的信息量级别（1-3之间）<br>
-KNFolder  知识网络目录，默认在datadir目录下<br>
-AllowMySQLQueryPath  是否支持Mysql原生的SQL查询，支持修改为1，否则0<br>
-启动infobright：service mysqld-ib start</p>
-
-<p><strong>ICE版本导入数据方式：<br></strong>
-BRIGHTHOUSE<br>
-load data infile &lsquo;/data/data.txt&rsquo; into table t fields terminated by &lsquo; &rsquo;;</p>
 </div>
   
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/">继续阅读 &rarr;</a>
+    </footer>
   
 
 
