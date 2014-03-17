@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-03-17T15:21:02+08:00</updated>
+  <updated>2014-03-17T15:31:01+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -46,41 +46,41 @@ B+树索引就是传统意义上的索引，是关系型数据库中最常用最
 
 <p>B+树是为磁盘及其他存储辅助设备而设计一种平衡查找树（不是二叉树）。B+树中，所有记录的节点按大小顺序存放在同一层的叶节点中，各叶节点用指针进行连接。<br>
 下面演示一个B+数结构，高度为2，每页可放4条记录，扇出(fan out)为5。从下图1可以看出，所有记录都在页节点中，并且为顺序存放，我们从最左边的叶节点开始遍历，可以得到所有键值的顺序排序：5、10、15、20、25、30、50、55、60、65、75、80、85、90.
-<img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/1.png" alt="" /></p>
+<img src="./images/mysql/1.png" alt="" /></p>
 
 <p><span id="t3">（1） B+树的插入操作</span>
 B+树的插入必须保证插入后叶节点的记录依然排序。同时要考虑插入B+树的三种情况，每种情况都可能导致不同的插入算法。如下表所示：<br>
-<img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/a.png" alt="" /></p>
+<img src="./images/mysql/2.png" alt="" /></p>
 
 <!--more-->
 
 
 <p>我们实例分析B+树的插入，在图1的B+树中，我们需要插入28这个值。因为Leaf Page和Index page都没有满，我们直接将记录插入叶节点就可以了。如下图2所示：</p>
 
-<p><img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/2.png" alt="" /><br>
+<p><img src="./images/mysql/3.png" alt="" /><br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图2  插入键值28<br>
 下面我们再插入70这个值，这时Leaf Page已经满了，但是Index Page还没有满，符合上面的第二种情况。这时插入Leaf Page的情况为
 50、55、60、65、70.我们根据中间的值60拆分叶节点，可得到下图3所示（双项链表指针依然存在，没有画出）
-<img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/3.png" alt="" /><br>
+<img src="./images/mysql/4.png" alt="" /><br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图3  插入键值70<br>
 最后我们再插入95，这个Leaf Page和Index Page都满了，符合上面第三种情况。需要做2次拆分，如下图4所示：<br>
-<img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/4.png" alt="" /><br>
+<img src="./images/mysql/5.png" alt="" /><br>
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图4  插入键值95<br>
 可以看到，不管怎么变化，B+树总会保持平衡。但是为了保持平衡，对于新插入的键值可能需要做大量的拆分页操作。B+树主要用于磁盘，拆分意味着磁盘的操作，应该在可能的情况下尽量减少页的拆分。因此，B+树提供了旋转功能。旋转发生在Leaf Page已经满了，但是左右兄弟节点没有满的情况下。这时B+树并不是急着做页的拆分，而是旋转。旋转结果如图5所示，可以看到旋转操作使B+树减少了一次页的拆分操作，高度仍然为2.<br>
-<img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/2-600x161.png" alt="" />
+<img src="./images/mysql/6.png" alt="" />
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图5 B+树的旋转操作</p>
 
 <p><span id="t4">(2) B+树的删除操作</span>
 B+树使用填充因子来控制数的删除变化。填充因子可以设置的最小值为50%。B+树的删除操作同样保证删除后叶节点的记录依然排序。
 根据填充因子的变化，B+树删除依然需要考虑三种情况，如下表所示：<br>
-<img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/b.png" alt="" /></p>
+<img src="./images/mysql/7.png" alt="" /></p>
 
 <p>根据图4的B+树，我们进行删除操作，首先删除键值为70的这条记录，该记录符合上表第一种情况，删除后如下图6所示：
-<img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/6.png" alt="" />
+<img src="./images/mysql/8.png" alt="" />
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图6 删除键值70</p>
 
 <p>接着我们删除键值为25的记录，这也是属于上表第一种情况，不同的是该值还是index page中的值。因此在删除Leaf Page中的25后，还需要将25的右兄弟节点28更新到Index Page中，如下图7所示（图中有两个笔误，红色为修正值）：<br>
-<img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/7.png" alt="" />
+<img src="./images/mysql/9.png" alt="" />
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图7  删除键值28<br>
 最后我们删除键值为60的记录。删除Leaf page键值为60的记录后，其填充因子小于50%。需要做合并操作。同样在删除Index page中相关记录后需要做Index Page的合并操作。</p>
 
