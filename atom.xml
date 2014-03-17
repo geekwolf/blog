@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-03-17T14:49:41+08:00</updated>
+  <updated>2014-03-17T15:21:02+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -18,7 +18,23 @@
     <link href="http://geekwolf.github.io/blog/2014/03/17/innodbsuo-yin-yuan-li-he-b-plus-shu/"/>
     <updated>2014-03-17T14:45:35+08:00</updated>
     <id>http://geekwolf.github.io/blog/2014/03/17/innodbsuo-yin-yuan-li-he-b-plus-shu</id>
-    <content type="html"><![CDATA[<h5>一、innodb存储引擎索引概述：<br></h5>
+    <content type="html"><![CDATA[<h5>目录<br></h5>
+
+<p><a href="#t1">一、innodb存储引擎索引概述</a><br>
+<a href="#t2">二、理解B+树算法</a><br>
+&emsp;&emsp;&emsp;<a href="#t3">(1) B+树的插入操作</a><br>
+&emsp;&emsp;&emsp;<a href="#t4">(2) B+树的删除操作</a><br>
+<a href="#t5">三、B+树索引介绍</a><br>
+&emsp;&emsp;&emsp;<a href="#t6">(1) 聚集索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t7">(2) 辅助索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t8">(3) B+树索引的管理</a><br>
+<a href="#t9">四、B+树索引的使用</a><br>
+&emsp;&emsp;&emsp;<a href="#t10">(1) 什么时候使用B+索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t11">(2) 顺序读、随机读与预读取</a><br>
+&emsp;&emsp;&emsp;<a href="#t12">(3) 辅助索引的优化</a><br>
+&emsp;&emsp;&emsp;<a href="#t13">(4) 联合索引</a><br></p>
+
+<h5><span id="t1">一、innodb存储引擎索引概述</span>：<br></h5>
 
 <p>innodb存储引擎支持两种常见的索引：B+树索引和哈希索引。<br>
 innodb支持哈希索引是自适应的，innodb会根据表的使用情况自动生成哈希索引。<br>
@@ -26,13 +42,13 @@ B+树索引就是传统意义上的索引，是关系型数据库中最常用最
 
 <p><strong>注意</strong>：B+树索引并不能找到一个键值对应的具体行。b+树索引只能查到被查找数据行所在的页，然后数据库通过把页读入内存，再在内存中查找，最后得到结果。</p>
 
-<h5>二、理解B+树算法</h5>
+<h5><span id="t2">二、理解B+树算法</span></h5>
 
 <p>B+树是为磁盘及其他存储辅助设备而设计一种平衡查找树（不是二叉树）。B+树中，所有记录的节点按大小顺序存放在同一层的叶节点中，各叶节点用指针进行连接。<br>
 下面演示一个B+数结构，高度为2，每页可放4条记录，扇出(fan out)为5。从下图1可以看出，所有记录都在页节点中，并且为顺序存放，我们从最左边的叶节点开始遍历，可以得到所有键值的顺序排序：5、10、15、20、25、30、50、55、60、65、75、80、85、90.
 <img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/1.png" alt="" /></p>
 
-<p>（1） B+树的插入操作
+<p><span id="t3">（1） B+树的插入操作</span>
 B+树的插入必须保证插入后叶节点的记录依然排序。同时要考虑插入B+树的三种情况，每种情况都可能导致不同的插入算法。如下表所示：<br>
 <img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/a.png" alt="" /></p>
 
@@ -54,7 +70,7 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
 <img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/2-600x161.png" alt="" />
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图5 B+树的旋转操作</p>
 
-<p>(2) B+树的删除操作
+<p><span id="t4">(2) B+树的删除操作</span>
 B+树使用填充因子来控制数的删除变化。填充因子可以设置的最小值为50%。B+树的删除操作同样保证删除后叶节点的记录依然排序。
 根据填充因子的变化，B+树删除依然需要考虑三种情况，如下表所示：<br>
 <img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/b.png" alt="" /></p>
@@ -68,12 +84,12 @@ B+树使用填充因子来控制数的删除变化。填充因子可以设置的
 &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图7  删除键值28<br>
 最后我们删除键值为60的记录。删除Leaf page键值为60的记录后，其填充因子小于50%。需要做合并操作。同样在删除Index page中相关记录后需要做Index Page的合并操作。</p>
 
-<h5>三、B+树索引介绍</h5>
+<h5><span id="t5">三、B+树索引介绍</span></h5>
 
 <p>B+树索引的本质是B+树在数据库中的实现。但是B+树索引有一个特点是高扇出性，因此在数据库中，B+树的高度一般在2到3层。也就是说查找某一键值的记录，最多只需要2到3次IO开销。按磁盘每秒100次IO来计算，查询时间只需0.0.2到0.03秒。<br>
 数据库中B+树索引分为聚集索引（clustered index）和非聚集索引（secondary index）.这两种索引的共同点是内部都是B+树，高度都是平衡的，叶节点存放着所有数据。不同点是叶节点是否存放着一整行数据。</p>
 
-<p>(1) 聚集索引<br>
+<p><span id="t6">(1) 聚集索引</span><br>
 Innodb存储引擎表是索引组织表，即表中数据按主键顺序存放。而聚集索引就是按每张表的主键构造一颗B+树。并且叶节点存放整张表的行记录数据。每张表只能有一个聚集索引（一个主键）。<br>
 聚集索引的另一个好处是它对于主键的排序查找和范围的速度非常快。叶节点的数据就是我们要找的数据。</p>
 
@@ -107,11 +123,11 @@ select_type: SIMPLE
 1 row in set (0.00 sec)
 </code></pre>
 
-<p>(2) 辅助索引<br>
+<p><span id="t7">(2) 辅助索引</span><br>
 辅助索引（也称非聚集索引）。叶级别不包含行的全部数据，叶级别除了包含行的键值以外，每个索引行还包含了一个书签（bookmark），该书签告诉innodb存储引擎，哪里可以找到与索引对应的数据。<br>
 辅助索引的存在并不影响数据再聚集索引中的组织，因此一个表可以有多个辅助索引。当通过辅助索引查找数据时，innodb会遍历辅助索引并通过叶级别的指针获得指向主键索引的主键。然后再通过主键索引找到一行完整的数据。</p>
 
-<p>(3) B+树索引的管理<br>
+<p><span id="t8">(3) B+树索引的管理</span><br>
 索引的创建和删除可以用两种方式。一种是alter table,另一种是create/drop index</p>
 
 <pre><code>alter table 创建和删除索引的语法为：
@@ -134,9 +150,9 @@ DROP [ONLINE|OFFLINE] INDEX index_name ON tbl_name
 <p>MySQL索引注意的问题：对于MySQL索引的添加和删除操作，MySQL先是创建一张加好索引的临时表，然后把数据导入临时表，再删除原表，把临时表重命名为原表。<br>
 Innodb存储引擎从Innodb Plugin版本开始，支持一种快速创建索引的方法（只限于辅助索引，主键索引仍需要建临时表）。首先对表加S锁，在创建的过程中不需要重建表，但是由于上了S锁，在创建索引的过程中只能进行查询操作，不能更新数据。<br></p>
 
-<h5>四、B+树索引的使用</h5>
+<h5><span id="t9">四、B+树索引的使用</span></h5>
 
-<p>(1).什么时候使用B+索引<br>
+<p><span id="t10">(1).什么时候使用B+索引</span><br>
 当查询表中很少一部分数据时，B+索引才有意义。对于性别，地区类型字段，他们取值范围很小，即低选择性。这时加B+索引是没有必要的。相反，某个字段取值范围很广，如姓名，几乎没有重复，即高选择性，则使用B+索引是比较合适的。因此。当访问高选择性字段并取出很少一部分数据时，该字段加B+索引是非常有效的。但是当取出的数据行占表中大部分数据时，数据库就不会使用B+索引了。<br></p>
 
 <p>举例说明下，看下面这个团购订单表groupon_so的部分索引：<br></p>
@@ -276,7 +292,7 @@ key_len: NULL
 可以看到我们取出了表中88%的数据，索引没有用到索引。
 </code></pre>
 
-<p>(2)顺序读、随机读与预读取<br>
+<p><span id="t11">(2)顺序读、随机读与预读取</span><br>
 顺序读是指顺序的读取磁盘上的块，随机读是指访问的块是不连续的，需要磁盘的磁头不断移动。随机读的性能是远远低于顺序读的。<br>
 在数据库中，顺序读根据索引的叶节点就能顺序的读取所需的行数据，这个顺序读只是逻辑的顺序读，在磁盘上可能还是随机读。随机读是指访问辅助索引叶节点不能完全得到结果，需要根据辅助索引页节点中的主键去寻找实际数据行。对于一些取表里很大部分数据的查询，正式因为读取是随机读，而随机读的性能会远低于顺序读。所以优化器才会选择全部扫描顺序读，而不使用索引。<br>
 innodb存储引擎有两个预读取方法，随机预读取和线性预读取。随机预读取是指当一个区（共64个连续页）中有13个页在缓冲区中并被频繁访问时，innodb存储引擎会将这个区中剩余的页预读到缓冲区。线性预读取基于缓冲池中页的访问方式，而不是数量。如果一个区中有24个页被顺序访问了，则innodb会读取下一个区的所有页到缓冲区。但是innodb预读取经过测试后性能比较差，经过TPCC测试发现禁用预读取比启用预读取提高了10%的性能。在新版本innodb中，mysql禁用了随机预读取，仅保留了线性预读取，并且加入了innodb_read_ahead_threshold参数，当连续访问页超过该值时才启用预读取，默认值为56。</p>
@@ -290,7 +306,7 @@ innodb存储引擎有两个预读取方法，随机预读取和线性预读取�
 1 row in set (0.00 sec)
 </code></pre>
 
-<p>3)辅助索引的优化<br>
+<p>3)<span id="t12">辅助索引的优化</span><br>
 通过前面可知，辅助索引的页节点包含主键，但是辅助索引的叶节点并不包含完整的行数据信息，因此，innodb存储引擎总是会从辅助索引的叶节点判断是否能得到数据。让我们看一个例子：<br></p>
 
 <pre><code>mysql&gt; create table t ( a int not null, b varchar(20), primary key(a),key(b));
@@ -408,7 +424,7 @@ b: anteloge
 4 rows in set (0.00 sec)
 </code></pre>
 
-<p>(4)联合索引<br>
+<p><span id="t13">(4)联合索引</span><br>
 联合索引是指对表上的多个列做索引，联合索引的创建方法和之前的一样，如下：</p>
 
 <pre><code>mysql&gt; alter table t add key idx_a_b(a,b);

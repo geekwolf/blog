@@ -97,7 +97,23 @@
   </header>
 
 
-  <div class="entry-content"><h5>一、innodb存储引擎索引概述：<br></h5>
+  <div class="entry-content"><h5>目录<br></h5>
+
+<p><a href="#t1">一、innodb存储引擎索引概述</a><br>
+<a href="#t2">二、理解B+树算法</a><br>
+&emsp;&emsp;&emsp;<a href="#t3">(1) B+树的插入操作</a><br>
+&emsp;&emsp;&emsp;<a href="#t4">(2) B+树的删除操作</a><br>
+<a href="#t5">三、B+树索引介绍</a><br>
+&emsp;&emsp;&emsp;<a href="#t6">(1) 聚集索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t7">(2) 辅助索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t8">(3) B+树索引的管理</a><br>
+<a href="#t9">四、B+树索引的使用</a><br>
+&emsp;&emsp;&emsp;<a href="#t10">(1) 什么时候使用B+索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t11">(2) 顺序读、随机读与预读取</a><br>
+&emsp;&emsp;&emsp;<a href="#t12">(3) 辅助索引的优化</a><br>
+&emsp;&emsp;&emsp;<a href="#t13">(4) 联合索引</a><br></p>
+
+<h5><span id="t1">一、innodb存储引擎索引概述</span>：<br></h5>
 
 <p>innodb存储引擎支持两种常见的索引：B+树索引和哈希索引。<br>
 innodb支持哈希索引是自适应的，innodb会根据表的使用情况自动生成哈希索引。<br>
@@ -105,13 +121,13 @@ B+树索引就是传统意义上的索引，是关系型数据库中最常用最
 
 <p><strong>注意</strong>：B+树索引并不能找到一个键值对应的具体行。b+树索引只能查到被查找数据行所在的页，然后数据库通过把页读入内存，再在内存中查找，最后得到结果。</p>
 
-<h5>二、理解B+树算法</h5>
+<h5><span id="t2">二、理解B+树算法</span></h5>
 
 <p>B+树是为磁盘及其他存储辅助设备而设计一种平衡查找树（不是二叉树）。B+树中，所有记录的节点按大小顺序存放在同一层的叶节点中，各叶节点用指针进行连接。<br>
 下面演示一个B+数结构，高度为2，每页可放4条记录，扇出(fan out)为5。从下图1可以看出，所有记录都在页节点中，并且为顺序存放，我们从最左边的叶节点开始遍历，可以得到所有键值的顺序排序：5、10、15、20、25、30、50、55、60、65、75、80、85、90.
 <img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/1.png" alt="" /></p>
 
-<p>（1） B+树的插入操作
+<p><span id="t3">（1） B+树的插入操作</span>
 B+树的插入必须保证插入后叶节点的记录依然排序。同时要考虑插入B+树的三种情况，每种情况都可能导致不同的插入算法。如下表所示：<br>
 <img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/a.png" alt="" /></p>
 
