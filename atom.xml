@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-03-21T09:56:26+08:00</updated>
+  <updated>2014-03-21T10:02:38+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -24,8 +24,9 @@
 <a href="#t2">二、启动关闭event scheduler方法</a><br>
 <a href="#t3">三、创建Event</a><br>
 <a href="#t4">四、修改Event</a><br>
-<a href="#t5">五、查询Event信息</a><br>
-&emsp;&emsp;Mysql中的事件调度器Event Scheduler类似于linux下的crontab计划任务的功能,它是由一个特殊的时间调度线程执行的</p>
+<a href="#t5">五、查询Event信息</a><br></p>
+
+<p>&emsp;&emsp;Mysql中的事件调度器Event Scheduler类似于linux下的crontab计划任务的功能,它是由一个特殊的时间调度线程执行的</p>
 
 <h5><span id="t1">一、查看当前是否开启了event scheduler三种方法</span>:</h5>
 
@@ -44,8 +45,7 @@
 
 
 <p>
- <strong>注：</strong>
-&emsp;&emsp;在Mysql启动时如果在my.cnf设置了event_scheduler=ON（OFF or 1 or 0）时，就不能在运行时修改撑DISABLED，如果设置event_scheduler=DISABLED时，就不能在运行时修改其值为ON （ OFF or 1 or 0）<br></p>
+ <strong>注：</strong>在Mysql启动时如果在my.cnf设置了event_scheduler=ON（OFF or 1 or 0）时，就不能在运行时修改撑DISABLED，如果设置event_scheduler=DISABLED时，就不能在运行时修改其值为ON （ OFF or 1 or 0）<br></p>
 
 <pre><code>mysql&gt; SELECT @@event_scheduler;
 +-------------------+
@@ -96,8 +96,9 @@ interval:
              DAY_SECOND | HOUR_MINUTE | HOUR_SECOND | MINUTE_SECOND}
 </code></pre>
 
-<p><strong>说明：</strong>
-&emsp;&emsp;DEFINER默认是CREATE EVENT的用户,可以理解为DEFINER=CURRENT_USER,指该event的用户，服务器在执行该事件时，使用该用户来检查权限；如果设置语法:&lsquo;user_name&rsquo;@&lsquo;host_name&#8217;，如果当前CREATE EVENT用户没有supser权限，则无法将该event指派给其他用户；如果有super权限，则可以指定任意存在的用户，若不存在，时间执行时报错<br>
+<p><strong>说明：</strong></p>
+
+<p>&emsp;&emsp;DEFINER默认是CREATE EVENT的用户,可以理解为DEFINER=CURRENT_USER,指该event的用户，服务器在执行该事件时，使用该用户来检查权限；如果设置语法:&lsquo;user_name&rsquo;@&lsquo;host_name&#8217;，如果当前CREATE EVENT用户没有supser权限，则无法将该event指派给其他用户；如果有super权限，则可以指定任意存在的用户，若不存在，时间执行时报错<br>
 &emsp;&emsp;IF NOT EXISTS ： 如果在同一个schema创建一个已经存在的event_name时不会做任何操作，也不会出错，但会出现warings：该event已经存在；如果不增加此关键词已经存在的话提示ERROR： 1537 (HY000): Event &#8216;countsum&rsquo; already exists<br>
 &emsp;&emsp;ON SCHEDULE ：用于设置什么时间执行，执行的频率及执行多久的问题<br>
 &emsp;&emsp;AT timestamp ：表示在给定的datetime或者timestamp的时间执行一次<br>
