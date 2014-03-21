@@ -103,9 +103,8 @@
 <a href="#t2">二、启动关闭event scheduler方法</a><br>
 <a href="#t3">三、创建Event</a><br>
 <a href="#t4">四、修改Event</a><br>
-<a href="#t5">五、查询Event信息</a><br></p>
-
-<p>   Mysql中的事件调度器Event Scheduler类似于linux下的crontab计划任务的功能,它是由一个特殊的时间调度线程执行的</p>
+<a href="#t5">五、查询Event信息</a><br>
+&emsp;&emsp;Mysql中的事件调度器Event Scheduler类似于linux下的crontab计划任务的功能,它是由一个特殊的时间调度线程执行的</p>
 
 <h5><span id="t1">一、查看当前是否开启了event scheduler三种方法</span>:</h5>
 
@@ -115,14 +114,10 @@
 
 <h5><span id="t2">二、启动关闭event scheduler方法</span>:</h5>
 
-<p> 时间调度器是否开启由全局变量event_scheduler决定，它有三个可以设定的值：</p>
-
-<ul>
-<li>OFF  : 事件调度器是关闭的，调度线程并没有运行，并且在SHOW PROCESSLIST中不显示，默认值是OFF</li>
-<li>ON ：事件调度器是开启的，调度线程并没有运行，并且执行所有的调度事件，通过SHOW PROCESSLIST可以查看Waiting for next activation的进程</li>
-<li>DISABLED : 设定这个值表示Event Scheduler是被禁止的，无法在Mysql运行状态下改变其值<br></li>
-</ul>
-
+<p> 时间调度器是否开启由全局变量event_scheduler决定，它有三个可以设定的值：
+&ndash;  OFF  : 事件调度器是关闭的，调度线程并没有运行，并且在SHOW PROCESSLIST中不显示，默认值是OFF
+&ndash;  ON ：事件调度器是开启的，调度线程并没有运行，并且执行所有的调度事件，通过SHOW PROCESSLIST可以查看Waiting for next activation的进程
+&ndash;  DISABLED : 设定这个值表示Event Scheduler是被禁止的，无法在Mysql运行状态下改变其值<br></p>
 
 </div>
   
