@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Mysql数据库 | Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/blog/categories/mysql数据库/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-04-04T10:37:34+08:00</updated>
+  <updated>2014-04-04T10:40:07+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -19,7 +19,7 @@
     <updated>2014-04-04T10:29:01+08:00</updated>
     <id>http://geekwolf.github.io/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie</id>
     <content type="html"><![CDATA[<p>本文主要根据自己的学习过程总结的文章，可能并不全面，牛人请绕过~<br>
-show create table user \G;      查看创建user表的sql
+show create table user \G;      查看创建user表的sql<br>
 <strong>修改表结构：</strong></p>
 
 <pre><code>alter  table tablename modify[culumn] column_definition [first|after col_name]
@@ -52,7 +52,7 @@ values
 (r1_v2,r2_v2,r3_v3);
 </code></pre>
 
-<p><strong>查询：</strong>
+<p><strong>查询：</strong><br>
 1.查询不重复记录 distinct</p>
 
 <pre><code>select distinct deptno from emp;
