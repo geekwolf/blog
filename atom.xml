@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-04-04T10:40:07+08:00</updated>
+  <updated>2014-04-04T10:49:01+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -130,6 +130,7 @@ select * from emp where deptno = (select deptno from dept limit 1);
 <p>6.记录联合（union、union all）
 场景：将两个表的数据按照一定的查询条件查询出来后，在合并显示
 union和union all的区别在于union all把结果集直接合并在一起，而union是将union all后的结果进行了去重DISTINCT后的结果
+<img src="http://geekwolf.github.io/images/mysql/unionall.png" alt="" /><br>
 <strong>查看帮助：</strong></p>
 
 <pre><code>显示可供查询的分类
