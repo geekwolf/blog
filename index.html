@@ -74,6 +74,67 @@
       
   <header>
     
+      <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie/">Sql基础操作总结</a></h4>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-04T10:29:01+08:00" pubdate data-updated="true">Apr 4<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>本文主要根据自己的学习过程总结的文章，可能并不全面，牛人请绕过~<br></p>
+
+<p>show create table user \G;      查看创建user表的sql</p>
+
+<p><strong>修改表结构：</strong></p>
+
+<pre><code>alter  table tablename modify[culumn] column_definition [first|after col_name]
+例子：
+修改emp的字段数据类型
+alter table  emp modify ename varchar(20);
+表首增加字段
+alter table emp add column id int(10) first;
+删除字段
+alter table emp drop [column]  id;
+字段改名 
+alter table tablename change [column] old_name column_definition [first/after col_name]
+更改表名
+alter table emp rename [to] test;
+</code></pre>
+
+<p><strong>注释：</strong> modify只能修改字段数据类型，不能修改字段名称，first/after 表示修改字段的顺序</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie/">继续阅读 &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/03/20/mysqlshi-jian-diao-du-qi-event-scheduler/">Mysql事件调度器(Event Scheduler)</a></h4>
     
     
@@ -347,6 +408,10 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie/">Sql基础操作总结</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/03/20/mysqlshi-jian-diao-du-qi-event-scheduler/">Mysql事件调度器(Event Scheduler)</a>
       </li>
     
@@ -366,7 +431,7 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
 </section>
 <section>
     <h2>文章归档</h2>
-    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (3)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (4)</a></li></ul>
 </section>
 <section>
   <h2>最新评论</h2>
