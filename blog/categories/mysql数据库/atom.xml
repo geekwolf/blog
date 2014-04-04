@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Mysql数据库 | Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/blog/categories/mysql数据库/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-04-04T10:34:33+08:00</updated>
+  <updated>2014-04-04T10:37:34+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -18,11 +18,9 @@
     <link href="http://geekwolf.github.io/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie/"/>
     <updated>2014-04-04T10:29:01+08:00</updated>
     <id>http://geekwolf.github.io/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie</id>
-    <content type="html"><![CDATA[<p>本文主要根据自己的学习过程总结的文章，可能并不全面，牛人请绕过~<br></p>
-
-<p>show create table user \G;      查看创建user表的sql</p>
-
-<p><strong>修改表结构：</strong></p>
+    <content type="html"><![CDATA[<p>本文主要根据自己的学习过程总结的文章，可能并不全面，牛人请绕过~<br>
+show create table user \G;      查看创建user表的sql
+<strong>修改表结构：</strong></p>
 
 <pre><code>alter  table tablename modify[culumn] column_definition [first|after col_name]
 例子：
@@ -54,23 +52,20 @@ values
 (r1_v2,r2_v2,r3_v3);
 </code></pre>
 
-<p><strong>查询：</strong></p>
-
-<p>1.查询不重复记录 distinct</p>
+<p><strong>查询：</strong>
+1.查询不重复记录 distinct</p>
 
 <pre><code>select distinct deptno from emp;
 </code></pre>
 
 <p>2.条件查询 where<br/>
-where字段比较 >、&lt;、>=、&lt;=、!= 等，多条件用or、and等</p>
-
-<p>3.排序和限制 order by
+where字段比较 >、&lt;、>=、&lt;=、!= 等，多条件用or、and等
+3.排序和限制 order by
 排序关键字（默认是升序排列）：<br>
 &emsp;&emsp;DESC 表示按照字段进行降序排列<br>
 &emsp;&emsp;ASC   表所升序排列<br>
-&emsp;&emsp;limit  n显示前N条记录</p>
-
-<p>4.聚合操作</p>
+&emsp;&emsp;limit  n显示前N条记录
+4.聚合操作</p>
 
 <pre><code>语法： select [fidled1,field2,...,fieldn] fun_name
 from  tablename
@@ -118,10 +113,9 @@ select ename,deptname from emp left join dept on emp.deptno=dept.deptno;
 <blockquote><p>表连接的好文章：
 <a href="http://coolshell.cn/articles/3463.html">http://coolshell.cn/articles/3463.html</a><br>
 MySQL的联结（Join）语法：
-<a href="http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html">http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html</a></p></blockquote>
-
-<p>6.子查询
-用于子查询的关键字包括in、not in、=、!=、exits、not exits等</p>
+<a href="http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html">http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html</a>
+6.子查询
+用于子查询的关键字包括in、not in、=、!=、exits、not exits等</p></blockquote>
 
 <pre><code>例如：
 从emp表中查询出所有部门在dept表中的所有记录
@@ -135,9 +129,8 @@ select * from emp where deptno = (select deptno from dept limit 1);
 
 <p>6.记录联合（union、union all）
 场景：将两个表的数据按照一定的查询条件查询出来后，在合并显示
-union和union all的区别在于union all把结果集直接合并在一起，而union是将union all后的结果进行了去重DISTINCT后的结果</p>
-
-<p><strong>查看帮助：</strong></p>
+union和union all的区别在于union all把结果集直接合并在一起，而union是将union all后的结果进行了去重DISTINCT后的结果
+<strong>查看帮助：</strong></p>
 
 <pre><code>显示可供查询的分类
 mysql&gt;? contents
