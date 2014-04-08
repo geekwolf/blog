@@ -96,14 +96,14 @@
 
 <div class="entry-content"><h5>一、数值类型</h5>
 
-<p><img src="./images/mysql/numbers.png" alt="" /></p>
+<p><img src="/images/mysql/numbers.png" alt="" /></p>
 
 <p><strong>注意事项：</strong><br>
 <strong>1. int类型里面默认的数据宽度是11，即int(11)</strong><br>
 &emsp;关于zerofill，在数字位数不够的空间用字符0填充<br>
 &emsp;例如：</p>
 
-<p><img src="./images/mysql/n2.png" alt="" /></p>
+<p><img src="/images/mysql/n2.png" alt="" /></p>
 
 <p><strong>2.整数类型有AUTO_INCREMENT的属性</strong><br>
 &emsp;AUTO_INCREMENT的值一般从1开始，每行增加1，插入NULL到一个AUTO_INCREMENT列时，Mysql插入一个比该列中当前最大值大1的值<br>
@@ -126,11 +126,11 @@ CREATE TABLE AI(ID INT AUTO_INCREMENT NOT NULL ,UNIQUE(ID));
 
 <p>&emsp;例如：</p>
 
-<p><img src="./images/mysql/n3.png" alt="" /></p>
+<p><img src="/images/mysql/n3.png" alt="" /></p>
 
 <h5>二、日期和时间类型</h5>
 
-<p><img src="./images/mysql/time.png" alt="" /></p>
+<p><img src="/images/mysql/time.png" alt="" /></p>
 
 <p><strong>注意事项:</strong><br>
 <strong>1.经常插入或者跟新日期为当前系统时间通常用TIMESTAMP来表示</strong><br>
@@ -184,13 +184,13 @@ mysql&gt; select * from t;
 
 <h5>三、字符串类型</h5>
 
-<p><img src="./images/mysql/char.png" alt="" /></p>
+<p><img src="/images/mysql/char.png" alt="" /></p>
 
 <p><strong>注意事项：</strong><br>
 <strong>1.varchar和char的不同之处在于存储方式不同</strong><br>
 &emsp;A. char列的长度固定为创建表时声明的长度，长度可以为0~255；varchar列中的值为可变长字符串，长度可以为0~65535</p>
 
-<p><img src="./images/mysql/charst.png" alt="" /></p>
+<p><img src="/images/mysql/charst.png" alt="" /></p>
 
 <p>&emsp;B.查询时char列删除了尾部的空格，而varchar则保留了这些空格<br>
 &emsp;例如：</p>
@@ -228,7 +228,7 @@ mysql&gt; select concat(v,'+'),concat(c,'+') from vc;
 &emsp;对于1~255个成员的枚举需要1个字节存储，对于255~65535个成员，需要2个字节存储，最多允许65535个成员<br>
 &emsp;例如:</p>
 
-<p><img src="./images/mysql/enum.png" alt="" /></p>
+<p><img src="/images/mysql/enum.png" alt="" /></p>
 
 <p>&emsp;ENUM类型是忽略大小写的，在存储&#8221;M&#8221; &ldquo;f&#8221;时将它们都转换成大写，插入不存在的ENUM指定的范围内的值时，并没有警告，而是插入了enum(&rsquo;M&#8217;,&lsquo;F&rsquo;)的第一个值“M”，只允许从集合中选取单个值，不能一次取多个</p>
 

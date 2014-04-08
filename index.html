@@ -99,14 +99,14 @@
 
   <div class="entry-content"><h5>一、数值类型</h5>
 
-<p><img src="./images/mysql/numbers.png" alt="" /></p>
+<p><img src="/images/mysql/numbers.png" alt="" /></p>
 
 <p><strong>注意事项：</strong><br>
 <strong>1. int类型里面默认的数据宽度是11，即int(11)</strong><br>
 &emsp;关于zerofill，在数字位数不够的空间用字符0填充<br>
 &emsp;例如：</p>
 
-<p><img src="./images/mysql/n2.png" alt="" /></p>
+<p><img src="/images/mysql/n2.png" alt="" /></p>
 
 <p><strong>2.整数类型有AUTO_INCREMENT的属性</strong><br>
 &emsp;AUTO_INCREMENT的值一般从1开始，每行增加1，插入NULL到一个AUTO_INCREMENT列时，Mysql插入一个比该列中当前最大值大1的值<br>
@@ -302,11 +302,11 @@ B+树索引就是传统意义上的索引，是关系型数据库中最常用最
 
 <p>B+树是为磁盘及其他存储辅助设备而设计一种平衡查找树（不是二叉树）。B+树中，所有记录的节点按大小顺序存放在同一层的叶节点中，各叶节点用指针进行连接。<br>
 下面演示一个B+数结构，高度为2，每页可放4条记录，扇出(fan out)为5。从下图1可以看出，所有记录都在页节点中，并且为顺序存放，我们从最左边的叶节点开始遍历，可以得到所有键值的顺序排序：5、10、15、20、25、30、50、55、60、65、75、80、85、90.
-<img src="./images/mysql/1.png" alt="" /></p>
+<img src="/images/mysql/1.png" alt="" /></p>
 
 <p><span id="t3">（1） B+树的插入操作</span>
 B+树的插入必须保证插入后叶节点的记录依然排序。同时要考虑插入B+树的三种情况，每种情况都可能导致不同的插入算法。如下表所示：<br>
-<img src="./images/mysql/2.png" alt="" /></p>
+(<img src="/images/mysql/2.png" alt="" /></p>
 
 </div>
   
