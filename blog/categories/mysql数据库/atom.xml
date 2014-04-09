@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Mysql数据库 | Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/blog/categories/mysql数据库/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-04-09T15:16:04+08:00</updated>
+  <updated>2014-04-09T19:11:23+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[理解MySQL运算符]]></title>
+    <title type="html"><![CDATA[理解MySQL运算符和常用内置函数]]></title>
     <link href="http://geekwolf.github.io/blog/2014/04/09/li-jie-mysqlyun-suan-fu/"/>
     <updated>2014-04-09T14:56:41+08:00</updated>
     <id>http://geekwolf.github.io/blog/2014/04/09/li-jie-mysqlyun-suan-fu</id>
@@ -164,6 +164,24 @@ mysql&gt; select 2&amp;3&amp;100;
 <h5>二、运算符的优先级</h5>
 
 <p><img src="/images/mysql/yxj.png" alt="" /></p>
+
+<h5>三、常用内置函数</h5>
+
+<p><img src="/images/mysql/strfun.png" alt="" /></p>
+
+<p><img src="/images/mysql/numfun.png" alt="" /></p>
+
+<p><img src="/images/mysql/timefun.png" alt="" /></p>
+
+<p><img src="/images/mysql/otherfun.png" alt="" /></p>
+
+<p><strong>注意事项：</strong><br>
+date_format(date,fmt)fmt格式:<br>
+<a href="http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-format">http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-format</a><br>
+date_add(date,INTERVAL expr type) type类型：<br>
+<a href="http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-add">http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-add</a></p>
+
+<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.5/en/functions.html">http://dev.mysql.com/doc/refman/5.5/en/functions.html</a></p></blockquote>
 ]]></content>
   </entry>
   

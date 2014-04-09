@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>理解MySQL运算符 - Geekwolf's Blog</title>
+  <title>理解MySQL运算符和常用内置函数 - Geekwolf's Blog</title>
   <meta name="author" content="Geekwolf">
 
   
-  <meta name="description" content="理解MySQL运算符">
-  <meta name="keywords" content="Mysql运算符">
+  <meta name="description" content="理解MySQL运算符和常用函数">
+  <meta name="keywords" content="Mysql运算符、内置函数">
 
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -71,7 +71,7 @@
 
   <header>
     
-      <h4 class="entry-title" align="center">理解MySQL运算符</h4>
+      <h4 class="entry-title" align="center">理解MySQL运算符和常用内置函数</h4>
     
     
       <p class="meta">
@@ -240,6 +240,24 @@ mysql&gt; select 2&amp;3&amp;100;
 <h5>二、运算符的优先级</h5>
 
 <p><img src="/images/mysql/yxj.png" alt="" /></p>
+
+<h5>三、常用内置函数</h5>
+
+<p><img src="/images/mysql/strfun.png" alt="" /></p>
+
+<p><img src="/images/mysql/numfun.png" alt="" /></p>
+
+<p><img src="/images/mysql/timefun.png" alt="" /></p>
+
+<p><img src="/images/mysql/otherfun.png" alt="" /></p>
+
+<p><strong>注意事项：</strong><br>
+date_format(date,fmt)fmt格式:<br>
+<a href="http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-format">http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-format</a><br>
+date_add(date,INTERVAL expr type) type类型：<br>
+<a href="http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-add">http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-add</a></p>
+
+<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.5/en/functions.html">http://dev.mysql.com/doc/refman/5.5/en/functions.html</a></p></blockquote>
 </div>
 
 
@@ -348,7 +366,7 @@ var jiathis_config = {data_track_clickback:'true'};
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2014/04/09/li-jie-mysqlyun-suan-fu/">理解MySQL运算符</a>
+        <a href="/blog/2014/04/09/li-jie-mysqlyun-suan-fu/">理解MySQL运算符和常用内置函数</a>
       </li>
     
       <li class="post">
