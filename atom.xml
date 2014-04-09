@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-04-08T20:19:39+08:00</updated>
+  <updated>2014-04-09T15:16:04+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -12,6 +12,160 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[理解MySQL运算符]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/04/09/li-jie-mysqlyun-suan-fu/"/>
+    <updated>2014-04-09T14:56:41+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/04/09/li-jie-mysqlyun-suan-fu</id>
+    <content type="html"><![CDATA[<h5>一、MySQL中的运算符</h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/suanshu.png" alt="" /></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/lj.png" alt="" /></p>
+
+<!--more-->
+
+
+<p><strong>注意事项：<br>
+1.在除法运算和模数运算中，如果除数是0，将是非法除数，结果返回NULL</strong><br>
+&emsp;取模运算中，也可以用MOD(a,b)函数或者a%b</p>
+
+<pre><code>mysql&gt; select 1/0, 100%0;
++------+-------+
+| 1/0 | 100%0 |
++------+-------+
+| NULL | NULL |
++------+-------+
+1 row in set (0.01 sec)
+mysql&gt; select 3%2,mod(3,2);
++------+----------+
+| 3%2 | mod(3,2) |
++------+----------+
+| 1 | 1 |
++------+----------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>2.NULL只能用&lt;=>进行比较，其他的比较运算符时返回NULL</strong></p>
+
+<pre><code>mysql&gt; select 'a'&lt;'b','a'&lt;'a',1&lt;2,null&lt;=&gt;null;
++---------+---------+-----+-------------+
+| 'a'&lt;'b' | 'a'&lt;'a' | 1&lt;2 | null&lt;=&gt;null |
++---------+---------+-----+-------------+
+| 1 | 0 | 1 | 1 |
++---------+---------+-----+-------------+
+1 row in set (0.02 sec)
+mysql&gt; select 'a'&lt;'b','a'&lt;'a',1&lt;2,null&lt;null;
++---------+---------+-----+-----------+
+| 'a'&lt;'b' | 'a'&lt;'a' | 1&lt;2 | null&lt;null |
++---------+---------+-----+-----------+
+| 1 | 0 | 1 | NULL |
++---------+---------+-----+-----------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>3.BETWEEN IN</strong><br>
+&emsp;between运算符使用“a BETWEEN min AND max”当a大于等于min并且小于等于max返回1，否则返回0
+&emsp;IN运算符使用&#8221;a IN（values1,values2,&hellip;)&ldquo;，当a的值存在于列表中时，则郑鄂表达式返回值1，否则0</p>
+
+<pre><code>mysql&gt; select 10 between 10 and 20,9 between 10 and 20;
++----------------------+---------------------+
+| 10 between 10 and 20 | 9 between 10 and 20 |
++----------------------+---------------------+
+| 1 | 0 |
++----------------------+---------------------+
+1 row in set (0.00 sec)
+mysql&gt; select 1 in(1,2,3),'t' in ('t','a','b','f'),0 in(1,2);
++-------------+--------------------------+-----------+
+| 1 in(1,2,3) | 't' in ('t','a','b','f') | 0 in(1,2) |
++-------------+--------------------------+-----------+
+| 1 | 1 | 0 |
++-------------+--------------------------+-----------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>4.REGEXP运算符格式&#8221;str REGEXP str_pat&#8221;</strong><br>
+&emsp;当str字符串中含有str_pat相匹配的字符串时返回1，否则0</p>
+
+<pre><code>mysql&gt; select 'abcdef' regexp 'ac','abcdef' regexp 'ab','abcdefg' regexp 'k';
++----------------------+----------------------+----------------------+
+| 'abcdef' regexp 'ac' | 'abcdef' regexp 'ab' | 'abcdefg' regexp 'k' |
++----------------------+----------------------+----------------------+
+| 0 | 1 | 0 |
++----------------------+----------------------+----------------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>5. 逻辑与AND和逻辑或OR</strong><br>
+&emsp;AND：当所有操作数都为非零，并且不为NULL时，返回1；当一个或多个为0时，返回0；操作数任何一个为NULL，则返回NULL<br>
+&emsp;OR   : 当两个操作数均为非NULL值时，如有任意一个为非零值，则返回1，否则0；<br>
+&emsp;&emsp;&emsp; 当有一个操作数为NULL时，如另外一个为非0，则结果1，否则NULL;<br>
+&emsp;&emsp;&emsp; 如果两个操作数均为NULL，则所得结果为NULL</p>
+
+<pre><code>mysql&gt; select (1 and 1),(0 and 1),(3 and 1),(1 and null);
++-----------+-----------+-----------+--------------+
+| (1 and 1) | (0 and 1) | (3 and 1) | (1 and null) |
++-----------+-----------+-----------+--------------+
+| 1 | 0 | 1 | NULL |
++-----------+-----------+-----------+--------------+
+1 row in set (0.00 sec)
+mysql&gt; select (1 or 0),(0 or 0),(1 or null),(1 or 1),(null or null);
++----------+----------+-------------+----------+----------------+
+| (1 or 0) | (0 or 0) | (1 or null) | (1 or 1) | (null or null) |
++----------+----------+-------------+----------+----------------+
+| 1 | 0 | 1 | 1 | NULL |
++----------+----------+-------------+----------+----------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>6.位运算</strong><br>
+&emsp;位与对多个操作数的二进制位做逻辑与操作<br></p>
+
+<pre><code>mysql&gt; select bin(2);
++--------+
+| bin(2) |
++--------+
+| 10 |
++--------+
+1 row in set (0.00 sec)
+mysql&gt; select bin(3);
++--------+
+| bin(3) |
++--------+
+| 11 |
++--------+
+1 row in set (0.00 sec)
+mysql&gt; select bin(100);
++----------+
+| bin(100) |
++----------+
+| 1100100 |
++----------+
+1 row in set (0.00 sec)
+mysql&gt; select 2&amp;3&amp;100;
++---------+
+| 2&amp;3&amp;100 |
++---------+
+| 0 |
++---------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>7.位取反</strong><br>
+&emsp;在MySQL中，常量数字默认会以8个字节来表示，8字节就是64位，常量1的二进制表示为63个0加1个1，位取反后就是63个1加1个0，转换成十进制后就是18446744073709551614</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/qf.png" alt="" /></p>
+
+<p><strong>8.位右移</strong><br></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/wyy.png" alt="" /></p>
+
+<h5>二、运算符的优先级</h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/yxj.png" alt="" /></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Mysql支持的数据类型]]></title>
