@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Mysql数据库 | Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/blog/categories/mysql数据库/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-04-23T14:36:24+08:00</updated>
+  <updated>2014-04-23T14:38:22+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -24,6 +24,9 @@
 <p>查看当前数据库支持的引擎<br>
 <code>   show engines \G;</code><br>
 <code>   show variables like 'have%';</code></p>
+
+<!--more-->
+
 
 <p>创建表时指定存储引擎<br>
 <code>   create table ai (i bigint(20) not null auto_increment,primary key(i));</code><br></p>
