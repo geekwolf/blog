@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-05-04T09:04:25+08:00</updated>
+  <updated>2014-05-16T18:29:18+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -651,8 +651,7 @@ mysql&gt;? create table
 <!--more-->
 
 
-<p>
- <strong>注：</strong>在Mysql启动时如果在my.cnf设置了event_scheduler=ON（OFF or 1 or 0）时，就不能在运行时修改撑DISABLED，如果设置event_scheduler=DISABLED时，就不能在运行时修改其值为ON （ OFF or 1 or 0）<br></p>
+<blockquote><p> <strong>注：</strong>在Mysql启动时如果在my.cnf设置了event_scheduler=ON（OFF or 1 or 0）时，就不能在运行时修改撑DISABLED，如果设置event_scheduler=DISABLED时，就不能在运行时修改其值为ON （ OFF or 1 or 0）<br></p></blockquote>
 
 <pre><code>mysql&gt; SELECT @@event_scheduler;
 +-------------------+
