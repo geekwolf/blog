@@ -74,6 +74,64 @@
       
   <header>
     
+      <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi/">MHA高可用部署及测试</a></h4>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-17T10:41:14+08:00" pubdate data-updated="true">May 17<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>**<a href="#t1">一、MHA特性</a><br>
+<a href="#t2">二、MHA工作机制及failover过程解析</a><br>
+<a href="#t3">三、MHA适用的主从架构</a><br>
+<a href="#t4">四、MHA高可用环境的构建</a><br>
+&emsp;&emsp;&emsp;&emsp;4.1 <a href="#t5">实验环境</a><br>
+&emsp;&emsp;&emsp;&emsp;4.2 <a href="#t6">实验大概步骤</a><br>
+&emsp;&emsp;&emsp;&emsp;4.3 <a href="#t7">相关脚本说明</a><br>
+&emsp;&emsp;&emsp;&emsp;4.4 <a href="#t8">MHA部署过程</a><br>
+&emsp;&emsp;&emsp;&emsp;4.5 <a href="#t9">配置VIP的方式</a><br>
+<a href="#t10">五、MHA常用命令</a><br>
+<a href="#t11">六、注意事项</a><br>
+<a href="#t12">七、部署过程遇到的问题</a><br></p>
+
+<h5><span id="t1">一.MHA特性</span></h5>
+
+<p>1.主服务器的自动监控和故障转移 <br>
+&emsp;&emsp;MHA监控复制架构的主服务器，一旦检测到主服务器故障，就会自动进行故障转移。即使有些从服务器没有收到最新的relay log，MHA自动从最新的从服务器上识别差异的relay log并把这些日志应用到其他从服务器上，因此所有的从服务器保持一致性了。MHA通常在几秒内完成故障转移，9-12秒可以检测出主服务器故障，7-10秒内关闭故障的主服务器以避免脑裂，几秒中内应用差异的relay log到新的主服务器上，整个过程可以在10-30s内完成。还可以设置优先级指定其中的一台slave作为master的候选人。由于MHA在slaves之间修复一致性，因此可以将任何slave变成新的master，而不会发生一致性的问题，从而导致复制失败。<br>
+2.交互式主服务器故障转移 <br></p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi/">继续阅读 &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/04/23/cun-chu-yin-qing-jie-shao-ji-gua-yong-chang-jing/">存储引擎介绍及适用场景</a></h4>
     
     
@@ -553,6 +611,10 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi/">MHA高可用部署及测试</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/04/23/cun-chu-yin-qing-jie-shao-ji-gua-yong-chang-jing/">存储引擎介绍及适用场景</a>
       </li>
     
@@ -568,15 +630,11 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
         <a href="/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie/">Sql基础操作总结</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/03/20/mysqlshi-jian-diao-du-qi-event-scheduler/">Mysql事件调度器(Event Scheduler)</a>
-      </li>
-    
   </ul>
 </section>
 <section>
     <h2>文章归档</h2>
-    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (7)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (8)</a></li></ul>
 </section>
 <section>
   <h2>最新评论</h2>
