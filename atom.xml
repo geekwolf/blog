@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-05-17T11:03:19+08:00</updated>
+  <updated>2014-05-17T11:04:21+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -18,7 +18,7 @@
     <link href="http://geekwolf.github.io/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi/"/>
     <updated>2014-05-17T10:41:14+08:00</updated>
     <id>http://geekwolf.github.io/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi</id>
-    <content type="html"><![CDATA[<p>**<a href="#t1">一、MHA特性</a><br>
+    <content type="html"><![CDATA[<p><a href="#t1">一、MHA特性</a><br>
 <a href="#t2">二、MHA工作机制及failover过程解析</a><br>
 <a href="#t3">三、MHA适用的主从架构</a><br>
 <a href="#t4">四、MHA高可用环境的构建</a><br>
