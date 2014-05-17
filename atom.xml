@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-05-17T11:04:21+08:00</updated>
+  <updated>2014-05-17T11:11:21+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -641,7 +641,9 @@ masterha_master_switch &mdash;master_state=dead &mdash;conf=/etc/mha/app1/app1.c
 <strong>B.</strong> 发生主备切换后，manager服务会自动停掉，且在/var/log/mha/app1下面生成<br>app1.failover.complete，若再次发生切换需要删除app1.failover.complete文件<br>
 <strong>C.</strong> 测试过程发现一主两从的架构(两从都设置可以担任主角色candidate_master=1)，当旧主故障迁移到备主后，删除app1.failover.complete，再次启动manager，停掉新主后，发现无法正常切换(解决方式：删除/etc/mha/app1/app1.cnf里面的旧主node1的信息后，重新切换正常) <br>
 <strong>D.</strong> arp缓存导致切换VIP后，无法使用问题 <br>
-<strong>E.</strong> 使用Semi-Sync能够最大程度保证数据安全<br></p>
+<strong>E.</strong> 使用Semi-Sync能够最大程度保证数据安全<br>
+<strong>F.</strong> Purge_relay_logs脚本删除中继日志不会阻塞SQL线程，在每台从节点上设置计划任务定期清除中继日志<br>
+&emsp;&emsp;0 5 * * * root /usr/bin/purge_relay_logs &mdash;user=root &mdash;password=geekwolf &mdash;disable_relay_log_purge >> /var/log/mha/purge_relay_logs.log 2>&amp;1</p>
 
 <h5><span id="t12">七.部署过程遇到的问题</span></h5>
 
