@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-05-23T09:18:30+08:00</updated>
+  <updated>2014-05-30T10:27:43+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -1251,7 +1251,7 @@ select ename,deptname from emp left join dept on emp.deptno=dept.deptno;
 <blockquote><p>表连接的好文章：
 <a href="http://coolshell.cn/articles/3463.html">http://coolshell.cn/articles/3463.html</a><br>
 MySQL的联结（Join）语法：
-<a href="http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html">http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html</a>
+<a href="http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html">http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html</a><br>
 6.子查询
 用于子查询的关键字包括in、not in、=、!=、exits、not exits等</p></blockquote>
 
