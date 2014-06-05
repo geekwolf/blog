@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-05-30T10:27:43+08:00</updated>
+  <updated>2014-06-05T11:33:46+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -330,7 +330,7 @@ Tue May 13 08:19:18 2014 - [info] Reading server configuration from /etc/mha/app
 &emsp;&emsp;rm -rf /var/log/mha/app1/app1.failover.complete<br>
 &emsp;&emsp;启动node1上的mysql，重新配置node2 node3 主从指向node1（change master to）<br>
 <strong>MHA Manager后台执行：</strong> <br>
-nohup masterha_manager &mdash;conf=/etc/mha/app1/app1.cnf &lt; /dev/null > /var/log/mha/app1/app1.log 2>&amp;1 &amp;
+nohup masterha_manager &mdash;conf=/etc/mha/app1/app1.cnf &lt; /dev/null > /var/log/mha/app1/app1.log 2>&amp;1 &amp; <br>
 守护进程方式参考：
 <a href="https://code.google.com/p/mysql-master-ha/wiki/Runnning_Background">https://code.google.com/p/mysql-master-ha/wiki/Runnning_Background</a><br>
 <a href="ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/weberho:/qmailtoaster/openSUSE_Tumbleweed/x86_64/daemontools-0.76-5.3.x86_64.rpm">ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/weberho:/qmailtoaster/openSUSE_Tumbleweed/x86_64/daemontools-0.76-5.3.x86_64.rpm</a></p>

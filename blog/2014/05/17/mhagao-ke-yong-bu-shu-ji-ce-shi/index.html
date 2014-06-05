@@ -27,10 +27,10 @@
   <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.useso.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
 
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href='http://fonts.googleapis.com/css?family=Allura:regular,italic,bold,bolditalic' rel='stylesheet' type='text/css'>
+<link href="http://fonts.useso.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.useso.com/css?family=Allura:regular,italic,bold,bolditalic' rel='stylesheet' type='text/css'>
 
   
 
@@ -406,7 +406,7 @@ Tue May 13 08:19:18 2014 - [info] Reading server configuration from /etc/mha/app
 &emsp;&emsp;rm -rf /var/log/mha/app1/app1.failover.complete<br>
 &emsp;&emsp;启动node1上的mysql，重新配置node2 node3 主从指向node1（change master to）<br>
 <strong>MHA Manager后台执行：</strong> <br>
-nohup masterha_manager &mdash;conf=/etc/mha/app1/app1.cnf &lt; /dev/null > /var/log/mha/app1/app1.log 2>&amp;1 &amp;
+nohup masterha_manager &mdash;conf=/etc/mha/app1/app1.cnf &lt; /dev/null > /var/log/mha/app1/app1.log 2>&amp;1 &amp; <br>
 守护进程方式参考：
 <a href="https://code.google.com/p/mysql-master-ha/wiki/Runnning_Background">https://code.google.com/p/mysql-master-ha/wiki/Runnning_Background</a><br>
 <a href="ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/weberho:/qmailtoaster/openSUSE_Tumbleweed/x86_64/daemontools-0.76-5.3.x86_64.rpm">ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/weberho:/qmailtoaster/openSUSE_Tumbleweed/x86_64/daemontools-0.76-5.3.x86_64.rpm</a></p>
