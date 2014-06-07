@@ -74,6 +74,64 @@
       
   <header>
     
+      <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/06/07/chu-ren-shi-puppet/">初认识Puppet</a></h4>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-07T16:25:41+08:00" pubdate data-updated="true">Jun 7<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="#pp1">自动化运维都有哪些开源软件?</a><br>
+<a href="#pp2">什么是Puppet?</a><br>
+<a href="#pp3">Puppet都有哪些特性?</a><br>
+<a href="#pp4">Puppet适用于哪些场合?</a><br>
+<a href="#pp5">Puppet社区版和企业版本功能上有什么差别?</a><br>
+<a href="#pp6">Puppet支持哪些系统?</a><br>
+<a href="#pp7">Puppet架构是怎样的?</a><br>
+<a href="#pp8">Puppet如何工作的?</a><br>
+<a href="#pp9">Puppet组织结构是怎样的?</a><br>
+<a href="#pp10">学习Puppet去哪里?</a><br></p>
+
+<p><strong><span id="pp1">自动化运维都有哪些开源软件？</span></strong><br></p>
+
+<p>初始化：Kickstart、Cobbler、 Rpmbuild/Xen、Kvm、Lxc、Docker/Openstack、Cloudstack、Opennebula、Eucalyplus<br>
+配置类工具：Chef、Puppet、Func、Cfengine<br>
+命令和控制类工具: Fabric、Salstack、Ansible、Capistrano、Pssh、Dsh、Expect<br>
+监控类工具：Cacti、Nagios、Zabbix、Ganglia<br>
+推荐阅读：<a href="http://hotpu-meeting.b0.upaiyun.com/2014dtcc/post_pdf/liuyu.pdf">http://hotpu-meeting.b0.upaiyun.com/2014dtcc/post_pdf/liuyu.pdf</a><br></p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/06/07/chu-ren-shi-puppet/">继续阅读 &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/06/05/mysqlfu-zhi-yuan-li-yu-pei-zhi/">MySQL复制原理与配置</a></h4>
     
     
@@ -584,66 +642,9 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/02/28/mysqlfen-qu-guan-li/">Mysql分区管理</a></h4>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-02-28T16:06:25+08:00" pubdate data-updated="true">Feb 28<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h5>初探：</h5>
-
-<p>   很长时间没写博客了，这两天一直在学习Mysql分区，总结下:<br/>
-  Mysql支持水平分区，并不支持垂直分区;<br/>
-  <strong>水平分区</strong>：指将同一表中不同行的记录分配到不同的物理文件中；<br/>
-  <strong>垂直分区</strong>：指将同一表中不同列的记录分配到不同的物理文件中；<br/>
-  其中CSV、FEDORATED、MERGE等引擎不支持分区，MYISAM、InnoDB、NDB等引擎支持分区<br/></p>
-
-<h5>目的：</h5>
-
-<p>  将一个表或索引分解为多个更小、更可管理的部分，从逻辑上讲，只有一个表或者索引，但是物理上这个表或者索引可能由数十个物理分区组成；没个分区都是独立的对象，可以独自处理，也可以作为一个更大对象的一部分进行处理（如果分区表很大，亦可以将分区分配到不同的磁盘上去）；在执行查询的时候，优化器会根据分区定义过滤哪些没有我们需要数据的分区，这样查询就无须全表扫描所有分区，只查找包含需要数据的分区即可</p>
-
-<h5>适用场景：</h5>
-
-<p>1、表非常大以至于无法全部都放到内存，或者只在表的最后部分有热点数据，其他均为历史数据
-2、分区表数据更容易维护（可独立对分区进行优化、检查、修复及批量删除大数据可以采用drop分区的形式等）
-3、分区表的数据可以分布在不同的物理设备上，从而高效地利用多个硬件设备
-4、分区表可以避免某些特殊的瓶颈（ps: InnoDB的单个索引的互斥访问、ext3文件系统的inode锁竞争等）
-5、可以备份和恢复独立的分区，非常适用于大数据集的场景</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/02/28/mysqlfen-qu-guan-li/">继续阅读 &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/blog/page/2/">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -665,6 +666,10 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/06/07/chu-ren-shi-puppet/">初认识Puppet</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/06/05/mysqlfu-zhi-yuan-li-yu-pei-zhi/">MySQL复制原理与配置</a>
       </li>
     
@@ -680,15 +685,11 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
         <a href="/blog/2014/04/09/li-jie-mysqlyun-suan-fu/">理解MySQL运算符和常用内置函数</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/04/08/mysqlzhi-chi-de-shu-ju-lei-xing/">Mysql支持的数据类型</a>
-      </li>
-    
   </ul>
 </section>
 <section>
     <h2>文章归档</h2>
-    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (9)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (9)</a></li><li><a href='/blog/categories/自动化运维'>自动化运维 (1)</a></li></ul>
 </section>
 <section>
   <h2>最新评论</h2>
