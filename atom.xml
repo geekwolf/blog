@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-06-12T16:15:43+08:00</updated>
+  <updated>2014-06-12T16:19:19+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -268,9 +268,9 @@ GTID_OWENED    ：表示正在执行的事务的GTID以及对应的线程ID<br><
 
 <p><strong><span id="gg7">参考文档：</span></strong></p>
 
-<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.6/en/replication-gtids-restrictions.html">MYSQL 5.6 GTID-based Replication</a>
-<a href="http://www.woqutech.com/?p=1108">MYSQL 5.6 GTID模式下手工删除日志导致备库数据丢失</a>
-<a href="http://www.mysqlperformanceblog.com/2013/05/09/how-to-create-a-new-or-repair-a-broken-gtid-based-slave-with-percona-xtrabackup/">How to create a new (or repair a broken) GTID based slave with Percona XtraBackup</a></p></blockquote>
+<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.6/en/replication-gtids-restrictions.html">MYSQL 5.6 GTID-based Replication</a><br>
+<a href="http://www.woqutech.com/?p=1108">MYSQL 5.6 GTID模式下手工删除日志导致备库数据丢失</a><br>
+<a href="http://www.mysqlperformanceblog.com/2013/05/09/how-to-create-a-new-or-repair-a-broken-gtid-based-slave-with-percona-xtrabackup/">How to create a new (or repair a broken) GTID based slave with Percona XtraBackup</a><br></p></blockquote>
 ]]></content>
   </entry>
   
