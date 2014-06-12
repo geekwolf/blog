@@ -74,6 +74,68 @@
       
   <header>
     
+      <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/">Infobright数据仓库安装及参数优化</a></h4>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-28T20:30:10+08:00" pubdate data-updated="true">Feb 28<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h5>一、认知Infobright数据仓库</h5>
+
+<ol>
+<li>Infobright是开源的DATA Warehouse，可以作为Mysql的存储引擎（BRIGHTHOUSE）使用，select查询与Mysql无区别</li>
+<li>适用于基于Mysql架构下的OLAP，区分为ICE（社区版免费）和IEE（企业版商业授权）</li>
+<li>千万级的查询性能比MyISAM、InnoDB等快5-60倍，且数据量很大时，查询性能基本在同一个数量级，适合聚合查询（SUM,COUNT，AVG，GROUP BY）</li>
+<li>列式存储，无需建索引和分区，高压缩比40:1（官方数字）</li>
+<li>ICE和IEE版本的区别和限制<br>
+<a href="https://www.infobright.org/index.php/Learn-More/ICE_IEE_Comparison/">https://www.infobright.org/index.php/Learn-More/ICE_IEE_Comparison/</a></li>
+</ol>
+
+
+<h5>二、Infobright基本安装初始化</h5>
+
+<pre><code> wget http://www.infobright.org/downloads/ice/infobright-4.0.7-0-x86_64-ice.rpm
+ rpm -ivh infobright-4.0.7-0-x86_64-ice.rpm --prefix=/usr/local/
+
+ A.初始化数据库：
+ /usr/local/infobright/scripts/mysql_install_db --datadir=/data/data/ --basedir=/usr/local/infobright-4.0.7-x86_64/ --force
+   安装之后会生成
+  /etc/my-ib.cnf.inactive （主配置文件，下面两个暂不讨论）
+</code></pre>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/">继续阅读 &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/02/28/mysqlfen-qu-guan-li/">Mysql分区管理</a></h4>
     
     
@@ -152,6 +214,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/06/12/mysql5-dot-6ji-yu-gtidfu-zhi-pei-zhi/">MySQL5.6基于GTID复制配置</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/06/07/chu-ren-shi-puppet/">初认识Puppet</a>
       </li>
     
@@ -167,15 +233,11 @@
         <a href="/blog/2014/04/23/cun-chu-yin-qing-jie-shao-ji-gua-yong-chang-jing/">存储引擎介绍及适用场景</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/04/09/li-jie-mysqlyun-suan-fu/">理解MySQL运算符和常用内置函数</a>
-      </li>
-    
   </ul>
 </section>
 <section>
     <h2>文章归档</h2>
-    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (9)</a></li><li><a href='/blog/categories/自动化运维'>自动化运维 (1)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (10)</a></li><li><a href='/blog/categories/自动化运维'>自动化运维 (1)</a></li></ul>
 </section>
 <section>
   <h2>最新评论</h2>

@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-06-07T17:11:32+08:00</updated>
+  <updated>2014-06-12T16:15:43+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -12,6 +12,267 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[MySQL5.6基于GTID复制配置]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/06/12/mysql5-dot-6ji-yu-gtidfu-zhi-pei-zhi/"/>
+    <updated>2014-06-12T16:06:59+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/06/12/mysql5-dot-6ji-yu-gtidfu-zhi-pei-zhi</id>
+    <content type="html"><![CDATA[<p>一、<a href="#gg1">什么是GTID？</a><br>
+二、<a href="#gg2">GTID的表示方式</a><br>
+三、<a href="#gg3">基于GTID的复制配置</a><br>
+四、<a href="#gg4">基于GTID复制增加新的slave</a><br>
+五、<a href="#gg5">基于GTID复制出错的解决办法</a><br>
+&emsp;&emsp;<a href="#gg6">注意事项</a><br>
+&emsp;&emsp;<a href="#gg7">参考文档</a><br></p>
+
+<p><strong><span id="gg1">一、什么是GTID？</span><br></strong>
+&emsp;&emsp;GTID(Global Transaction Identifiers)是全局事务标识<br>
+&emsp;&emsp;当使用GTIDS时，在主上提交的每一个事务都会被识别和跟踪，并且运用到所有从MySQL，而且配置主从或者主从切换时不再需要指定 master_log_files和master_log_pos；由于GTID-base复制是完全基于事务的，所以能很简单的决定主从复制的一致性；官方建议Binlog采用Row格式</p>
+
+<p><strong><span id="gg2">二、GTID的表示方式</span><br></strong>
+source_id：transaction_id<br>
+source_id：表示执行事务的主库的UUID(server_uuid:Mysql5.6的data目录下启动时会生成auto.cnf文件记录了uuid，重启后uuid不变，删除文件后会重新生成新的uuid)；<br>
+transaction_id：是一个从1开始自增的计数，表示在这个主库上执行的第n个事务；<br>
+由于每台Mysql的uuid是全球唯一的，transaction_id自身唯一，就保证了GTID全局唯一性</p>
+
+<!--more-->
+
+
+<p></p>
+
+<pre><code>mysql&gt; show variables like 'server_uuid'; 
++---------------+--------------------------------------+
+| Variable_name | Value |
++---------------+--------------------------------------+
+| server_uuid | 4468c0e8-ef6f-11e3-9c2c-0200c0a80ad8 |
++---------------+--------------------------------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong><span id="gg3">三、基于GTID的复制配置</span><br></strong></p>
+
+<p><strong>master：</strong>192.168.10.216<br>
+<strong>slave ：</strong>192.168.10.217<br>
+<strong>步骤：</strong><br>
+&emsp;&emsp;修改主从my.cnf增加GTID支持&mdash;>主只读&mdash;>拷贝数据到从数据目录&mdash;>重启主从&mdash;>在从上进行配置<br>
+1.修改主从my.cnf增加GTID支持<br></p>
+
+<pre><code>主Mysql配置：
+server-id=216   
+binlog-format=ROW
+gtid-mode=on
+enforce-gtid-consistency=true 
+log-bin=mysql-bin
+log-slave-updates=true   slave更新是否记入日志
+
+从Mysql配置：
+server-id=217   同一个复制拓扑中的所有服务器的id号必须惟一
+binlog-format=ROW
+gtid-mode=on  启用gtid类型，否则就是普通的复制架构
+enforce-gtid-consistency=true 强制GTID的一致性
+log-bin=mysql-bin
+log-slave-updates=true   slave更新是否记入日志
+只从库配置：
+slave-paralles-workers 设定从服务器的SQL线程数；0表示关闭多线程复制功能；
+</code></pre>
+
+<p>2.主只读<br></p>
+
+<pre><code>mysql&gt; SET @@global.read_only = ON;
+</code></pre>
+
+<p>拷贝主数据到从目录<br></p>
+
+<p>3.重启主从Mysql<br></p>
+
+<p>4.在从上配置基于GTID的复制<br></p>
+
+<pre><code>mysql&gt; CHANGE MASTER TO 
+     &gt; MASTER_HOST = ‘192.168.10.216’,
+     &gt; MASTER_PORT = 3306,
+     &gt; MASTER_USER = 'rep',
+     &gt; MASTER_PASSWORD = 'geekwolf',
+     &gt; MASTER_AUTO_POSITION = 1;
+</code></pre>
+
+<p>5.启动从库<br></p>
+
+<pre><code>mysql&gt; start slave; 
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql&gt; show slave status \G
+*************************** 1. row ***************************
+   Slave_IO_State: Waiting for master to send event
+  Master_Host: 192.168.10.216
+  Master_User: rep
+  Master_Port: 3306
+Connect_Retry: 60
+  Master_Log_File: mysql-bin.000002
+  Read_Master_Log_Pos: 41921904
+   Relay_Log_File: relay-bin.000002
+Relay_Log_Pos: 64520
+Relay_Master_Log_File: mysql-bin.000002
+ Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+  Replicate_Do_DB:
+  Replicate_Ignore_DB:
+   Replicate_Do_Table:
+   Replicate_Ignore_Table:
+  Replicate_Wild_Do_Table:
+  Replicate_Wild_Ignore_Table: mysql.%
+   Last_Errno: 0
+   Last_Error:
+ Skip_Counter: 0
+  Exec_Master_Log_Pos: 41921904
+  Relay_Log_Space: 64718
+  Until_Condition: None
+   Until_Log_File:
+Until_Log_Pos: 0
+   Master_SSL_Allowed: No
+   Master_SSL_CA_File:
+   Master_SSL_CA_Path:
+  Master_SSL_Cert:
+Master_SSL_Cipher:
+   Master_SSL_Key:
+Seconds_Behind_Master: 0
+Master_SSL_Verify_Server_Cert: No
+Last_IO_Errno: 0
+Last_IO_Error:
+   Last_SQL_Errno: 0
+   Last_SQL_Error:
+  Replicate_Ignore_Server_Ids:
+ Master_Server_Id: 216
+  Master_UUID: 21ad8db5-f038-11e3-a14a-0200c0a80ad8
+ Master_Info_File: /usr/local/mysql/data/master.info
+SQL_Delay: 0
+  SQL_Remaining_Delay: NULL
+  Slave_SQL_Running_State: Reading event from the relay log
+   Master_Retry_Count: 86400
+  Master_Bind:
+  Last_IO_Error_Timestamp:
+ Last_SQL_Error_Timestamp:
+   Master_SSL_Crl:
+   Master_SSL_Crlpath:
+   Retrieved_Gtid_Set: 21ad8db5-f038-11e3-a14a-0200c0a80ad8:76793-77026
+Executed_Gtid_Set: 21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-77025
+Auto_Position: 1
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>注：</strong><br></p>
+
+<p>两个Yes代表复制正常<br>
+Slave_IO_Running: Yes  <br>
+Slave_SQL_Running: Yes  <br></p>
+
+<p>基于GTID复制的新特性：<br>
+ Retrieved_Gtid_Set: 21ad8db5-f038-11e3-a14a-0200c0a80ad8:76793-77026<br>
+ Executed_Gtid_Set: 21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-77025<br></p>
+
+<p>Retrieved_Gtid_Set项：记录了relay日志从Master获取了binlog日志的位置<br>
+Executed_Gtid_Set项：记录本机执行的binlog日志位置（如果是从机，包括Master的binlog日志位置和slave本身的binlog日志位置）<br></p>
+
+<p><strong><span id="gg4">四、基于GTID复制增加新的slave</span><br></strong>
+&emsp;&emsp;备份主MySQL数据，记录主gtid_executed&mdash;>将备份数据恢复到从数据目录&mdash;>设置从gtid_purged的值为主的gtid_executed值&mdash;>启动复制即可</p>
+
+<p>1.使用mysqldump备份主数据<br>
+&emsp;&emsp;mysqldump &mdash;all-databases &mdash;single-transaction &mdash;triggers &mdash;routines &mdash;host=127.0.0.1 &mdash;port=3306 &mdash;user=root  &mdash;password=geekwolf > backup.sql<br>
+&emsp;&emsp;亦可以使用xtrabackup也支持GTID：<br>
+&emsp;&emsp;请参考:<a href="http://www.mysqlperformanceblog.com/2013/05/09/how-to-create-a-new-or-repair-a-broken-gtid-based-slave-with-percona-xtrabackup/">http://www.mysqlperformanceblog.com/2013/05/09/how-to-create-a-new-or-repair-a-broken-gtid-based-slave-with-percona-xtrabackup/</a></p>
+
+<p>2.传到从MySQL，恢复数据<br>
+&emsp;&emsp;由于新版本msqldump会记录并设置GTID_PURGED的值等于主的GTID_EXECUTED，所以只需要将sql导入到从库即可</p>
+
+<p>3.启动主从复制<br></p>
+
+<pre><code>从库执行
+mysql &gt; CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_USER='root', MASTER_PASSWORD=geekwolf', MASTER_PORT=3306, MASTER_AUTO_POSITION = 1;
+mysql &gt; START SLAVE;
+</code></pre>
+
+<p><strong><span id="gg5">五、基于GTID复制出错的解决办法</span><br></strong></p>
+
+<p><strong>问题:</strong><br></p>
+
+<pre><code>Slave_IO_Running: No
+Slave_SQL_Running: Yes
+Last_IO_Error: Got fatal error 1236 from master when reading data from binary log: 'The slave is connecting using CHANGE MASTER TO MASTER_AUTO_POSITION = 1, but the master has purged binary logs containing GTIDs that the slave requires.'
+</code></pre>
+
+<p><strong>解决思路:</strong><br></p>
+
+<p>从复制跳过已经丢失的binlog，继续复制或者重新做主从（可以参考上面的操作）</p>
+
+<pre><code>主MySQL：
+mysql&gt; show global variables like '%gtid_executed%';
++---------------+-----------------------------------------------+
+| Variable_name | Value |
++---------------+-----------------------------------------------+
+| gtid_executed | 21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-223937 |
++---------------+-----------------------------------------------+
+1 row in set (0.00 sec)
+
+从MySQL：
+mysql&gt; set global GTID_PURGED="21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-223937";
+ERROR 1840 (HY000): @@GLOBAL.GTID_PURGED can only be set when @@GLOBAL.GTID_EXECUTED is empty.
+
+mysql&gt; reset master;
+Query OK, 0 rows affected (0.19 sec)
+mysql&gt; show global variables like 'GTID_EXECUTED';
++---------------+-----------------------------------------------+
+| Variable_name | Value |
++---------------+-----------------------------------------------+
+| gtid_executed |  |
++---------------+-----------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql&gt; stop slave;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql&gt; set global GTID_PURGED="21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-223937";
+Query OK, 0 rows affected (0.13 sec)
+
+mysql&gt; start slave;
+Query OK, 0 rows affected (0.04 sec)
+
+mysql&gt; show slave status\G
+[...]
+Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+[...]
+</code></pre>
+
+<p><strong><span id="gg6">注意事项：</span><br></strong>
+&emsp;&emsp;使用基于GTID复制时，不需要再关心master_log_file和master_log_pos，替代的是只需要知道master上的GTID，并且配置在从上即可；<br>
+&emsp;&emsp;记录GTID的有两个全局变量：gtid_executed和gtid_purged<br></p>
+
+<p><strong>与GTID复制相关的参数：</strong></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/gtid.png" alt="" /></p>
+
+<p>GTID_EXECUTED  ：表示已经在该实例上执行过的事务；执行RESET MASTER可以置空该参数；也可以设置GTID_NEXT执行一个空事务来影响GTID_EXECUTED<br>
+GTID_NEXT           ：是SESSION级别参数，表示下一个事务被执行使用的GTID（show variables like &lsquo;gtid_%&rsquo;;）<br>
+GTID_PURGED      ：表示被删除的binlog事务GTID，它是GTID_EXCUTED的子集，MySQL5.6.9，该参数无法被设置<br>
+GTID_OWENED    ：表示正在执行的事务的GTID以及对应的线程ID<br></p>
+
+<p>如果设置MASTER_AUTO_POSITION = 1表示主从复制连接使用基于GTID的方式复制</p>
+
+<pre><code>CHANGE MASTER TO MASTER_HOST='192.168.10.216',MASTER_USER='rep',MASTER_PASSWORD='geekwolf',MASTER_AUTO_POSITION=1;
+</code></pre>
+
+<p>如果在GTID复制模式下想要使用基于文件的复制协议需要MASTER_AUTO_POSITION=0（至少指定其中MASTER_LOG_FILE、MASTER_LOG_POSITION一个）</p>
+
+<pre><code>CHANGE MASTER TO MASTER_HOST='192.168.10.216',MASTER_USER='rep',MASTER_PASSWORD='geekwolf',MASTER_LOG_FILE='mysql-bin.000002',MASTER_LOG_POS=120,MASTER_AUTO_POSITION=0;
+</code></pre>
+
+<p><strong><span id="gg7">参考文档：</span></strong></p>
+
+<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.6/en/replication-gtids-restrictions.html">MYSQL 5.6 GTID-based Replication</a>
+<a href="http://www.woqutech.com/?p=1108">MYSQL 5.6 GTID模式下手工删除日志导致备库数据丢失</a>
+<a href="http://www.mysqlperformanceblog.com/2013/05/09/how-to-create-a-new-or-repair-a-broken-gtid-based-slave-with-percona-xtrabackup/">How to create a new (or repair a broken) GTID based slave with Percona XtraBackup</a></p></blockquote>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[初认识Puppet]]></title>
