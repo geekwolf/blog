@@ -3,7 +3,7 @@ layout: post
 title: "Mysql分区管理"
 date: 2014-02-28 16:06:25 +0800
 comments: true
-categories: [Mysql]
+categories: [Mysql数据库]
 keywords: Mysql分区表,Partition,Mysql
 description: Mysql分区管理基本操作
 ---

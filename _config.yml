@@ -94,13 +94,13 @@ delicious_user:
 delicious_count: 3
 
 # Disqus Comments
-disqus_short_name: geekwolf
-disqus_show_comment_count: true
+disqus_short_name: 1688879
+disqus_show_comment_count: 10
 
+#JiaThis
+jiathis: true
 # Google Analytics
 google_analytics_tracking_id:
 
 # Facebook Like
 facebook_like: false
-#comment and share
-#comment_share: true

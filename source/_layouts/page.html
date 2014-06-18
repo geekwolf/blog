@@ -7,7 +7,7 @@ layout: default
   {% if page.title %}
   <header>
     <h4 class="entry-title">{% if site.titlecase %}{{ page.title | titlecase }}{% else %}{{ page.title }}{% endif %}</h4>
-    {% if page.date %}<p class="meta">  {% include post/date.html %}{{ time }}</p>{% endif %}
+    {% if page.date %}<p class="meta">  {% include post/date.html %}{{ time }}  </p>{% endif %}
   </header>
   {% endif %}
   {{ content }}
@@ -25,11 +25,19 @@ layout: default
   {% endunless %}
 </article>
 {% if site.disqus_short_name and page.comments == true %}
-  <section>
+<!--   <section>
     <h4>Comments</h4>
     <div id="disqus_thread" aria-live="polite">{% include post/disqus_thread.html %}</div>
   </section>
+-->
+
+
+<section>
+<div id="uyan_frame"></div>
+<script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=1688879"></script>
 {% endif %}
+</section>
+
 </div>
 {% unless page.sidebar == false %}
 <aside class="sidebar">
