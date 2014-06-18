@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 自动化运维 | Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/blog/categories/自动化运维/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-06-16T13:54:00+08:00</updated>
+  <updated>2014-06-18T09:55:52+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -32,7 +32,7 @@
 <ol>
 <li>Puppet master尽量使用高配置server<br></li>
 <li>任何官方未支持的系统也可以正常运行puppet，前提是要装合适的版本的ruby环境<br>
-&emsp;（请参考:<a href="http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements">http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements</a><br></li>
+&emsp;请参考:<a href="http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements">http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements</a><br></li>
 <li>master防火墙放行8140端口给agent<br></li>
 <li>每个节点都必须有一个唯一的主机名，正解析和反解析都被正确配置，如果没有DNS服务，必须在每个节点上配置/etc/hosts<br>
 &emsp;<strong>注</strong>：默认情况下puppet的master的主机名是puppet<br></li>
