@@ -547,7 +547,7 @@ global_defs {
  smtp_connect_timeout 30
  }
 
-varrp_script check_mysql {
+vrrp_script check_mysql {
      script "/etc/keepalived/check_mysql.sh"
 }
 vrrp_sync_group VG1 {
@@ -598,7 +598,7 @@ global_defs {
  smtp_connect_timeout 30
  }
 
-varrp_script check_mysql {
+vrrp_script check_mysql {
      script "/etc/keepalived/check_mysql.sh"
 }
 vrrp_sync_group VG1 {
@@ -641,7 +641,7 @@ CHECK_TIME=3
 #mysql  is working MYSQL_OK is 1 , mysql down MYSQL_OK is 0
 MYSQL_OK=1
 function check_mysql_helth (){
-$MYSQL -h $MYSQL_HOST -u $MYSQL_USER -e "show status;" &gt;/dev/null 2&gt;&amp;1
+$MYSQL -h $MYSQL_HOST -u $MYSQL_USER -p $MYSQL_PASSWORD -e "show status;" &gt;/dev/null 2&gt;&amp;1
 if [ $? = 0 ] ;then
      MYSQL_OK=1
 else
@@ -921,9 +921,7 @@ var jiathis_config = {data_track_clickback:'true'};
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <span class="credit"><a href="http://www.simlinux.com">SimLinux by Geekwolf </a></span>&nbsp;&nbsp;&nbsp;&nbsp;
-<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_5935088'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s4.cnzz.com/stat.php%3Fid%3D5935088' type='text/javascript'%3E%3C/script%3E"));
-</script>
-
+<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_5935068'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/stat.php%3Fid%3D5935068%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script>
 </p>
 
 </footer>

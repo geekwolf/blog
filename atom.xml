@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-06-18T13:31:33+08:00</updated>
+  <updated>2014-06-21T17:40:40+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -1375,7 +1375,7 @@ global_defs {
  smtp_connect_timeout 30
  }
 
-varrp_script check_mysql {
+vrrp_script check_mysql {
      script "/etc/keepalived/check_mysql.sh"
 }
 vrrp_sync_group VG1 {
@@ -1426,7 +1426,7 @@ global_defs {
  smtp_connect_timeout 30
  }
 
-varrp_script check_mysql {
+vrrp_script check_mysql {
      script "/etc/keepalived/check_mysql.sh"
 }
 vrrp_sync_group VG1 {
@@ -1469,7 +1469,7 @@ CHECK_TIME=3
 #mysql  is working MYSQL_OK is 1 , mysql down MYSQL_OK is 0
 MYSQL_OK=1
 function check_mysql_helth (){
-$MYSQL -h $MYSQL_HOST -u $MYSQL_USER -e "show status;" &gt;/dev/null 2&gt;&amp;1
+$MYSQL -h $MYSQL_HOST -u $MYSQL_USER -p $MYSQL_PASSWORD -e "show status;" &gt;/dev/null 2&gt;&amp;1
 if [ $? = 0 ] ;then
      MYSQL_OK=1
 else
