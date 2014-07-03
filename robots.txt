@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: 
+
+Sitemap: http://geekwolf.github.io/sitemap.xml 
