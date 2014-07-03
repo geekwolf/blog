@@ -1,0 +1,479 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Centos6.5下安装Puppet及测试 - Geekwolf's Blog</title>
+  <meta name="author" content="Geekwolf">
+
+  
+  <meta name="description" content="在Centos6.5下安装Puppet及证书的管理和测试">
+  <meta name="keywords" content="Puppet,证书签发">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Geekwolf's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+<!--  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>-->
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.useso.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+<link href="http://fonts.useso.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.useso.com/css?family=Allura:regular,italic,bold,bolditalic' rel='stylesheet' type='text/css'>
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Geekwolf's Blog</a></h1>
+  
+    <h2>The quieter you become,the more you are able to hear...       Linux & MySQL</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:geekwolf.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">首页</a></li>
+  <li><a href="/blog/archives">文章归档</a></li>
+  <li><a href="/collects">整理精华</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+
+  <header>
+    
+      <h4 class="entry-title" align="center">Centos6.5下安装Puppet及测试</h4>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-16T13:50:24+08:00" pubdate data-updated="true">Jun 16<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>一、<a href="#ap1">安装前注意事项</a><br>
+二、<a href="#ap2">环境说明</a><br>
+三、<a href="#ap3">安装步骤</a><br>
+&emsp;&emsp;<a href="#ap4">配置puppet的yum源</a><br>
+&emsp;&emsp;<a href="#ap5">分别安装puppet-master和puppet</a><br>
+&emsp;&emsp;<a href="#ap6">修改配置</a><br>
+&emsp;&emsp;<a href="#ap7">证书签发、注销、清楚</a><br>
+&emsp;&emsp;<a href="#ap8">测试</a><br></p>
+
+<p><strong><span id="ap1">安装前注意事项：</span></strong><br></p>
+
+<ol>
+<li>Puppet master尽量使用高配置server<br></li>
+<li>任何官方未支持的系统也可以正常运行puppet，前提是要装合适的版本的ruby环境<br>
+&emsp;请参考:<a href="http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements">http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements</a><br></li>
+<li>master防火墙放行8140端口给agent<br></li>
+<li>每个节点都必须有一个唯一的主机名，正解析和反解析都被正确配置，如果没有DNS服务，必须在每个节点上配置/etc/hosts<br>
+&emsp;<strong>注</strong>：默认情况下puppet的master的主机名是puppet<br></li>
+<li>由于Puppet master同时扮演着CA(认证授权机构)的角色,需要时间同步,启动ntpd服务；<br></li>
+<li>两种工作模式：Master/Agent、Standatone<br></li>
+</ol>
+
+
+<p><strong><span id="ap2">环境说明：</span></strong><br></p>
+
+<!--more-->
+
+
+<p></p>
+
+<p>192.168.10.216&emsp;&emsp;&emsp;Puppet Agent&emsp;&emsp;&emsp;c1.geekwolf.github.io<br>
+192.168.10.217&emsp;&emsp;&emsp;Puppet Agent&emsp;&emsp;&emsp;c2.geekwolf.github.io<br>
+192.168.10.218&emsp;&emsp;&emsp;Puppet Master&emsp;&emsp;&emsp;m.geekwolf.github.io<br></p>
+
+<p><strong><span id="ap3">安装步骤</span></strong><br></p>
+
+<p><strong><span id="ap4">1.安装puppet的yum源</span></strong><br>
+rpm -ivh <a href="http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm">http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm</a><br>
+说明:若要测试RC版及相关软件编辑/etc/yum.repos.d/puppetlabs.repo：<br></p>
+
+<pre><code>[puppetlabs-devel]
+name=Puppet Labs Devel El 6 - $basearch
+baseurl=http://yum.puppetlabs.com/el/6/devel/$basearch
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+enabled=1
+gpgcheck=1
+
+yum -y install  ntp
+service ntpd start
+chkconfig ntpd on
+</code></pre>
+
+<p>配置好hostname，并将解析写进hosts同步到所有节点<br>
+<strong><span id="ap5">2.在master:192.168.10.218安装puppet-server</span></strong><br></p>
+
+<pre><code>yum -y install puppet-server（依赖puppet、facter一起安装）
+生成启动脚本:
+/etc/init.d/puppetmaster 
+Master配置文件目录：
+/etc/puppet
+
+chkconfig puppetmaster on
+service puppetmaster start
+
+升级puppet master：
+puppet resource package puppet ensure=latest
+service puppetmaster restart
+</code></pre>
+
+<p><strong>3.在c1 c2 上安装puppet</strong><br></p>
+
+<pre><code>yum -y install puppet
+chkconfig puppet on
+service puppet start
+Agent配置文件目录:
+/etc/sysconfig/puppet.conf
+</code></pre>
+
+<p><strong><span id="ap6">4.配置puppet agent c1 c2指定Puppet Master地址</span></strong><br></p>
+
+<pre><code>vim  /etc/puppet/puppet.conf
+[main]
+# The Puppet log directory.
+# The default value is '$vardir/log'.
+logdir = /var/log/puppet
+# Where Puppet PID files are kept.
+# The default value is '$vardir/run'.
+rundir = /var/run/puppet
+# Where SSL certificates are kept.
+# The default value is '$confdir/ssl'.
+ssldir = $vardir/ssl
+[agent]
+# The file in which puppetd stores a list of the classes
+# associated with the retrieved configuratiion. Can be loaded in
+# the separate ``puppet`` executable using the ``--loadclasses``
+# option.
+# The default value is '$confdir/classes.txt'.
+classfile = $vardir/classes.txt
+# Where puppetd caches the local configuration. An
+# extension indicating the cache format is added automatically.
+# The default value is '$confdir/localconfig'.
+localconfig = $vardir/localconfig
+server = m.geekwolf.github.io
+</code></pre>
+
+<p><strong><span id="ap7">5.签发证书</span></strong><br>
+<strong>A.手动签发证书</strong><br>
+c1、c2申请证书，由于已经配置了server=m.geekwolf.github.io，故申请时不必在指定server<br></p>
+
+<pre><code>[root@c1 ~]# puppet agent -t
+Info: Creating a new SSL key for c1.geekwolf.github.io
+Info: Caching certificate for ca
+Info: Caching certificate_request for c1.geekwolf.github.io
+Info: Caching certificate for ca
+Exiting; no certificate found and waitforcert is disabled
+</code></pre>
+
+<p>在Master上管理证书：<br>
+<strong>签发证书：</strong><br></p>
+
+<pre><code>puppet cert list --all                   查看请求签发的证书（+表示已签发，-未签发）
+puppet cert --sign c1.geekwolf.github.io 签发主机c1.geekwolf.github.io的证书
+puppet cert --sign --all                 签发所有请求的主机的证书
+</code></pre>
+
+<p><strong>注销证书：</strong></p>
+
+<pre><code>puppet cert revoke  c1.geekwolf.github.io 注销主机c1.geekwolf.github.io的证书
+puppet cert revoke --all                  注销所有主机的证书（若想在重新签名，需先重启puppetmaster,然后节点在请求申请证书，再签名即可）
+</code></pre>
+
+<p><strong>清除证书：</strong></p>
+
+<pre><code>在master上清除某节点证书,重启puppetmaster后生效
+puppet cert --clean c1.geekwolf.github.io 
+
+在agent上删除相关目录,可以重新再申请签名   
+rm -rf /var/lib/puppet/ssl 或者rm -rf /var/lib/puppet/certs/c1.geekwolf.github.io.pem 
+</code></pre>
+
+<p><strong>B.自动签发证书</strong><br>
+在Puppet Master创建/etc/puppet/autosign.conf文件<br>
+*.geekwolf.github.io        (geekwolf.github.io域的申请会自动签发)<br>
+service puppetmaster restart<br>
+所有节点上执行<br>
+rm -rf /var/lib/puppet/ssl<br></p>
+
+<p>然后所有的节点申请签名<br>
+ puppet agent -t &mdash;server m.geekwolf.github.io</p>
+
+<pre><code>在Puppet Master查看签名
+[root@m puppet]# puppet cert list --all
++ "c1.geekwolf.github.io" (SHA256) 2A:28:96:6C:B0:36:E8:CC:71:80:F4:C6:B5:D8:61:94:A8:59:46:9D:52:A3:58:2A:D9:78:45:A3:57:93:1C:38
++ "c2.geekwolf.github.io" (SHA256) 09:59:71:9A:CA:AE:92:82:1D:D4:0C:A6:D4:5F:51:C3:D6:E4:EE:80:20:19:CB:B1:71:EE:B3:24:F7:E3:80:71
++ "m.geekwolf.github.io" (SHA256) 10:F3:28:EA:36:25:38:C5:1C:8A:38:FD:94:EF:F9:77:6B:97:E9:FA:60:18:D5:53:DD:5D:DA:15:88:4F:96:A1 (alt names: "DNS:m.geekwolf.github.io", "DNS:puppet", "DNS:puppet.geekwolf.github.io")
+</code></pre>
+
+<p><strong>参考文档：</strong> <a href="http://docs.puppetlabs.com/puppet/3.6/reference/config_ssl_external_ca.html#option-3-two-intermediate-cas-issued-by-one-root-ca">多CA配置</a></p>
+
+<p><strong><span id="ap8">6.测试</span></strong><br></p>
+
+<pre><code>默认agent（c1，c2）每30分钟连接到puppet master,为测试方便先修改连接时间
+echo "runinterval = 10" &gt;&gt;/etc/puppet/puppet.conf
+service puppet restart
+
+Puppet Master：
+vim /etc/puppet/manifests/site.pp
+file {"/tmp/test.txt" :
+  content=&gt;"test from geekwolf!~\n"; } 
+
+检查c1 c2是否有/tmp/test.txt文件
+</code></pre>
+</div>
+
+
+<footer>
+<p class="meta">
+
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Geekwolf</span></span>
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-16T13:50:24+08:00" pubdate data-updated="true">Jun 16<span>th</span>, 2014</time>
+
+
+<span class="categories" >
+  
+    <a class='category' href='/blog/categories/自动化运维/'>自动化运维</a>
+  
+</span>
+
+
+</p>
+
+
+<div class="sharing">
+<!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+	<span class="jiathis_txt">分享到：</span>
+	<a class="jiathis_button_tools_1"></a>
+	<a class="jiathis_button_tools_2"></a>
+	<a class="jiathis_button_tools_3"></a>
+	<a class="jiathis_button_tools_4"></a>
+	<a href="http://www.jiathis.com/share?uid=1688879" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript">
+var jiathis_config = {data_track_clickback:'true'};
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1348036107375787" charset="utf-8"></script>
+<!-- JiaThis Button END --> 
+
+
+
+
+<!--
+ 
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/" data-via="" data-counturl="http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/" >Tweet</a>
+-->
+  
+  
+  
+  
+
+</div>
+
+
+<p class="meta">
+
+<a class="basic-alignment left" href="/blog/2014/06/12/mysql5-dot-6ji-yu-gtidfu-zhi-pei-zhi/" title="Previous Post: MySQL5.6基于GTID复制配置">&laquo; MySQL5.6基于GTID复制配置</a>
+
+
+</p>
+</footer>
+</article>
+
+
+<!--  <section>
+<h4>Comments</h4>
+<div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div> 
+  </section>
+
+-->
+<section>
+<div id="uyan_frame"></div>
+<script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=1688879"></script>
+ </section>
+
+</div>
+
+
+<aside class="sidebar">
+  
+    <section>
+    <h2>关于我</h2>
+    <p align="center"><img src="/images/logo.jpg" alt="image" /></p>
+    <p style="font-size:0.7em">屌丝运维男,兼Mysql DBA,RHCA,喜欢折腾开源项目，爱好旅游，喜欢和妹子一起吃饭~~</p>
+</section>
+<section>
+  <h2>Sina围脖</h2>
+<iframe width="100%" height="600" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=600&fansRow=1&ptype=1&speed=300&skin=10&isTitle=1&noborder=1&isWeibo=1&isFans=0&uid=2665843121&verifier=ff6a8f14&dpc=1"></iframe>
+</section>
+<section>
+  <h2>最新文章</h2>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/">Centos6.5下安装Puppet及测试</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/12/mysql5-dot-6ji-yu-gtidfu-zhi-pei-zhi/">MySQL5.6基于GTID复制配置</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/07/chu-ren-shi-puppet/">初认识Puppet</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/05/mysqlfu-zhi-yuan-li-yu-pei-zhi/">MySQL复制原理与配置</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi/">MHA高可用部署及测试</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+    <h2>文章归档</h2>
+    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (10)</a></li><li><a href='/blog/categories/自动化运维'>自动化运维 (2)</a></li></ul>
+</section>
+<section>
+<h2>最新评论</h2>
+<!-- UYAN NEW COMMENT BEGIN -->
+<div id="uyan_newcmt_unit"></div>
+<script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=1688879"></script> <!-- 如果已经过加载此行JS，即可不用重复加载 -->
+<!-- UYAN NEW COMMENT END -->
+</section>
+<section>
+  <h2>友情连接</h2>
+  <ul>
+    <li>
+     <a href="http://www.linuxhonker.com/">服务器架构研究</a></br>
+     <a href="http://blog.chinaunix.net/uid/7589639.html">路建国DBA</a></br>
+    </li>
+  </ul>
+</section>
+<section>
+    <h2>License</h2>
+    <p align="center"><img src="/images/CC.png" alt="image" /></p>
+    <p>License 本站所有作品采用<a  href="http://creativecommons.org/licenses/by-nc-sa/2.5/cn/">知识共享署名-非商业性使用-相同方式共享 2.5 中国大陆许可协议进行许可</a></p>
+</section
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Geekwolf -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <span class="credit"><a href="http://www.simlinux.com">SimLinux by Geekwolf </a></span>&nbsp;&nbsp;&nbsp;&nbsp;
+<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_5935068'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/stat.php%3Fid%3D5935068%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = '1688879';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/';
+        var disqus_url = 'http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+<!-- 
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+-->
+
+
+
+
+</body>
+</html>

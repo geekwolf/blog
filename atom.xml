@@ -1,0 +1,3373 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Geekwolf's Blog]]></title>
+  <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
+  <link href="http://geekwolf.github.io/"/>
+  <updated>2014-06-21T17:40:40+08:00</updated>
+  <id>http://geekwolf.github.io/</id>
+  <author>
+    <name><![CDATA[Geekwolf]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Centos6.5下安装Puppet及测试]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/"/>
+    <updated>2014-06-16T13:50:24+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi</id>
+    <content type="html"><![CDATA[<p>一、<a href="#ap1">安装前注意事项</a><br>
+二、<a href="#ap2">环境说明</a><br>
+三、<a href="#ap3">安装步骤</a><br>
+&emsp;&emsp;<a href="#ap4">配置puppet的yum源</a><br>
+&emsp;&emsp;<a href="#ap5">分别安装puppet-master和puppet</a><br>
+&emsp;&emsp;<a href="#ap6">修改配置</a><br>
+&emsp;&emsp;<a href="#ap7">证书签发、注销、清楚</a><br>
+&emsp;&emsp;<a href="#ap8">测试</a><br></p>
+
+<p><strong><span id="ap1">安装前注意事项：</span></strong><br></p>
+
+<ol>
+<li>Puppet master尽量使用高配置server<br></li>
+<li>任何官方未支持的系统也可以正常运行puppet，前提是要装合适的版本的ruby环境<br>
+&emsp;请参考:<a href="http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements">http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements</a><br></li>
+<li>master防火墙放行8140端口给agent<br></li>
+<li>每个节点都必须有一个唯一的主机名，正解析和反解析都被正确配置，如果没有DNS服务，必须在每个节点上配置/etc/hosts<br>
+&emsp;<strong>注</strong>：默认情况下puppet的master的主机名是puppet<br></li>
+<li>由于Puppet master同时扮演着CA(认证授权机构)的角色,需要时间同步,启动ntpd服务；<br></li>
+<li>两种工作模式：Master/Agent、Standatone<br></li>
+</ol>
+
+
+<p><strong><span id="ap2">环境说明：</span></strong><br></p>
+
+<!--more-->
+
+
+<p></p>
+
+<p>192.168.10.216&emsp;&emsp;&emsp;Puppet Agent&emsp;&emsp;&emsp;c1.geekwolf.github.io<br>
+192.168.10.217&emsp;&emsp;&emsp;Puppet Agent&emsp;&emsp;&emsp;c2.geekwolf.github.io<br>
+192.168.10.218&emsp;&emsp;&emsp;Puppet Master&emsp;&emsp;&emsp;m.geekwolf.github.io<br></p>
+
+<p><strong><span id="ap3">安装步骤</span></strong><br></p>
+
+<p><strong><span id="ap4">1.安装puppet的yum源</span></strong><br>
+rpm -ivh <a href="http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm">http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm</a><br>
+说明:若要测试RC版及相关软件编辑/etc/yum.repos.d/puppetlabs.repo：<br></p>
+
+<pre><code>[puppetlabs-devel]
+name=Puppet Labs Devel El 6 - $basearch
+baseurl=http://yum.puppetlabs.com/el/6/devel/$basearch
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+enabled=1
+gpgcheck=1
+
+yum -y install  ntp
+service ntpd start
+chkconfig ntpd on
+</code></pre>
+
+<p>配置好hostname，并将解析写进hosts同步到所有节点<br>
+<strong><span id="ap5">2.在master:192.168.10.218安装puppet-server</span></strong><br></p>
+
+<pre><code>yum -y install puppet-server（依赖puppet、facter一起安装）
+生成启动脚本:
+/etc/init.d/puppetmaster 
+Master配置文件目录：
+/etc/puppet
+
+chkconfig puppetmaster on
+service puppetmaster start
+
+升级puppet master：
+puppet resource package puppet ensure=latest
+service puppetmaster restart
+</code></pre>
+
+<p><strong>3.在c1 c2 上安装puppet</strong><br></p>
+
+<pre><code>yum -y install puppet
+chkconfig puppet on
+service puppet start
+Agent配置文件目录:
+/etc/sysconfig/puppet.conf
+</code></pre>
+
+<p><strong><span id="ap6">4.配置puppet agent c1 c2指定Puppet Master地址</span></strong><br></p>
+
+<pre><code>vim  /etc/puppet/puppet.conf
+[main]
+# The Puppet log directory.
+# The default value is '$vardir/log'.
+logdir = /var/log/puppet
+# Where Puppet PID files are kept.
+# The default value is '$vardir/run'.
+rundir = /var/run/puppet
+# Where SSL certificates are kept.
+# The default value is '$confdir/ssl'.
+ssldir = $vardir/ssl
+[agent]
+# The file in which puppetd stores a list of the classes
+# associated with the retrieved configuratiion. Can be loaded in
+# the separate ``puppet`` executable using the ``--loadclasses``
+# option.
+# The default value is '$confdir/classes.txt'.
+classfile = $vardir/classes.txt
+# Where puppetd caches the local configuration. An
+# extension indicating the cache format is added automatically.
+# The default value is '$confdir/localconfig'.
+localconfig = $vardir/localconfig
+server = m.geekwolf.github.io
+</code></pre>
+
+<p><strong><span id="ap7">5.签发证书</span></strong><br>
+<strong>A.手动签发证书</strong><br>
+c1、c2申请证书，由于已经配置了server=m.geekwolf.github.io，故申请时不必在指定server<br></p>
+
+<pre><code>[root@c1 ~]# puppet agent -t
+Info: Creating a new SSL key for c1.geekwolf.github.io
+Info: Caching certificate for ca
+Info: Caching certificate_request for c1.geekwolf.github.io
+Info: Caching certificate for ca
+Exiting; no certificate found and waitforcert is disabled
+</code></pre>
+
+<p>在Master上管理证书：<br>
+<strong>签发证书：</strong><br></p>
+
+<pre><code>puppet cert list --all                   查看请求签发的证书（+表示已签发，-未签发）
+puppet cert --sign c1.geekwolf.github.io 签发主机c1.geekwolf.github.io的证书
+puppet cert --sign --all                 签发所有请求的主机的证书
+</code></pre>
+
+<p><strong>注销证书：</strong></p>
+
+<pre><code>puppet cert revoke  c1.geekwolf.github.io 注销主机c1.geekwolf.github.io的证书
+puppet cert revoke --all                  注销所有主机的证书（若想在重新签名，需先重启puppetmaster,然后节点在请求申请证书，再签名即可）
+</code></pre>
+
+<p><strong>清除证书：</strong></p>
+
+<pre><code>在master上清除某节点证书,重启puppetmaster后生效
+puppet cert --clean c1.geekwolf.github.io 
+
+在agent上删除相关目录,可以重新再申请签名   
+rm -rf /var/lib/puppet/ssl 或者rm -rf /var/lib/puppet/certs/c1.geekwolf.github.io.pem 
+</code></pre>
+
+<p><strong>B.自动签发证书</strong><br>
+在Puppet Master创建/etc/puppet/autosign.conf文件<br>
+*.geekwolf.github.io        (geekwolf.github.io域的申请会自动签发)<br>
+service puppetmaster restart<br>
+所有节点上执行<br>
+rm -rf /var/lib/puppet/ssl<br></p>
+
+<p>然后所有的节点申请签名<br>
+ puppet agent -t &mdash;server m.geekwolf.github.io</p>
+
+<pre><code>在Puppet Master查看签名
+[root@m puppet]# puppet cert list --all
++ "c1.geekwolf.github.io" (SHA256) 2A:28:96:6C:B0:36:E8:CC:71:80:F4:C6:B5:D8:61:94:A8:59:46:9D:52:A3:58:2A:D9:78:45:A3:57:93:1C:38
++ "c2.geekwolf.github.io" (SHA256) 09:59:71:9A:CA:AE:92:82:1D:D4:0C:A6:D4:5F:51:C3:D6:E4:EE:80:20:19:CB:B1:71:EE:B3:24:F7:E3:80:71
++ "m.geekwolf.github.io" (SHA256) 10:F3:28:EA:36:25:38:C5:1C:8A:38:FD:94:EF:F9:77:6B:97:E9:FA:60:18:D5:53:DD:5D:DA:15:88:4F:96:A1 (alt names: "DNS:m.geekwolf.github.io", "DNS:puppet", "DNS:puppet.geekwolf.github.io")
+</code></pre>
+
+<p><strong>参考文档：</strong> <a href="http://docs.puppetlabs.com/puppet/3.6/reference/config_ssl_external_ca.html#option-3-two-intermediate-cas-issued-by-one-root-ca">多CA配置</a></p>
+
+<p><strong><span id="ap8">6.测试</span></strong><br></p>
+
+<pre><code>默认agent（c1，c2）每30分钟连接到puppet master,为测试方便先修改连接时间
+echo "runinterval = 10" &gt;&gt;/etc/puppet/puppet.conf
+service puppet restart
+
+Puppet Master：
+vim /etc/puppet/manifests/site.pp
+file {"/tmp/test.txt" :
+  content=&gt;"test from geekwolf!~\n"; } 
+
+检查c1 c2是否有/tmp/test.txt文件
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[MySQL5.6基于GTID复制配置]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/06/12/mysql5-dot-6ji-yu-gtidfu-zhi-pei-zhi/"/>
+    <updated>2014-06-12T16:06:59+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/06/12/mysql5-dot-6ji-yu-gtidfu-zhi-pei-zhi</id>
+    <content type="html"><![CDATA[<p>一、<a href="#gg1">什么是GTID？</a><br>
+二、<a href="#gg2">GTID的表示方式</a><br>
+三、<a href="#gg3">基于GTID的复制配置</a><br>
+四、<a href="#gg4">基于GTID复制增加新的slave</a><br>
+五、<a href="#gg5">基于GTID复制出错的解决办法</a><br>
+&emsp;&emsp;<a href="#gg6">注意事项</a><br>
+&emsp;&emsp;<a href="#gg7">参考文档</a><br></p>
+
+<p><strong><span id="gg1">一、什么是GTID？</span><br></strong>
+&emsp;&emsp;GTID(Global Transaction Identifiers)是全局事务标识<br>
+&emsp;&emsp;当使用GTIDS时，在主上提交的每一个事务都会被识别和跟踪，并且运用到所有从MySQL，而且配置主从或者主从切换时不再需要指定 master_log_files和master_log_pos；由于GTID-base复制是完全基于事务的，所以能很简单的决定主从复制的一致性；官方建议Binlog采用Row格式</p>
+
+<p><strong><span id="gg2">二、GTID的表示方式</span><br></strong>
+source_id：transaction_id<br>
+source_id：表示执行事务的主库的UUID(server_uuid:Mysql5.6的data目录下启动时会生成auto.cnf文件记录了uuid，重启后uuid不变，删除文件后会重新生成新的uuid)；<br>
+transaction_id：是一个从1开始自增的计数，表示在这个主库上执行的第n个事务；<br>
+由于每台Mysql的uuid是全球唯一的，transaction_id自身唯一，就保证了GTID全局唯一性</p>
+
+<!--more-->
+
+
+<p></p>
+
+<pre><code>mysql&gt; show variables like 'server_uuid'; 
++---------------+--------------------------------------+
+| Variable_name | Value |
++---------------+--------------------------------------+
+| server_uuid | 4468c0e8-ef6f-11e3-9c2c-0200c0a80ad8 |
++---------------+--------------------------------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong><span id="gg3">三、基于GTID的复制配置</span><br></strong></p>
+
+<p><strong>master：</strong>192.168.10.216<br>
+<strong>slave ：</strong>192.168.10.217<br>
+<strong>步骤：</strong><br>
+&emsp;&emsp;修改主从my.cnf增加GTID支持&mdash;>主只读&mdash;>拷贝数据到从数据目录&mdash;>重启主从&mdash;>在从上进行配置<br>
+1.修改主从my.cnf增加GTID支持<br></p>
+
+<pre><code>主Mysql配置：
+server-id=216   
+binlog-format=ROW
+gtid-mode=on
+enforce-gtid-consistency=true 
+log-bin=mysql-bin
+log-slave-updates=true   slave更新是否记入日志
+
+从Mysql配置：
+server-id=217   同一个复制拓扑中的所有服务器的id号必须惟一
+binlog-format=ROW
+gtid-mode=on  启用gtid类型，否则就是普通的复制架构
+enforce-gtid-consistency=true 强制GTID的一致性
+log-bin=mysql-bin
+log-slave-updates=true   slave更新是否记入日志
+只从库配置：
+slave-paralles-workers 设定从服务器的SQL线程数；0表示关闭多线程复制功能；
+</code></pre>
+
+<p>2.主只读<br></p>
+
+<pre><code>mysql&gt; SET @@global.read_only = ON;
+</code></pre>
+
+<p>拷贝主数据到从目录<br></p>
+
+<p>3.重启主从Mysql<br></p>
+
+<p>4.在从上配置基于GTID的复制<br></p>
+
+<pre><code>mysql&gt; CHANGE MASTER TO 
+     &gt; MASTER_HOST = ‘192.168.10.216’,
+     &gt; MASTER_PORT = 3306,
+     &gt; MASTER_USER = 'rep',
+     &gt; MASTER_PASSWORD = 'geekwolf',
+     &gt; MASTER_AUTO_POSITION = 1;
+</code></pre>
+
+<p>5.启动从库<br></p>
+
+<pre><code>mysql&gt; start slave; 
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql&gt; show slave status \G
+*************************** 1. row ***************************
+   Slave_IO_State: Waiting for master to send event
+  Master_Host: 192.168.10.216
+  Master_User: rep
+  Master_Port: 3306
+Connect_Retry: 60
+  Master_Log_File: mysql-bin.000002
+  Read_Master_Log_Pos: 41921904
+   Relay_Log_File: relay-bin.000002
+Relay_Log_Pos: 64520
+Relay_Master_Log_File: mysql-bin.000002
+ Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+  Replicate_Do_DB:
+  Replicate_Ignore_DB:
+   Replicate_Do_Table:
+   Replicate_Ignore_Table:
+  Replicate_Wild_Do_Table:
+  Replicate_Wild_Ignore_Table: mysql.%
+   Last_Errno: 0
+   Last_Error:
+ Skip_Counter: 0
+  Exec_Master_Log_Pos: 41921904
+  Relay_Log_Space: 64718
+  Until_Condition: None
+   Until_Log_File:
+Until_Log_Pos: 0
+   Master_SSL_Allowed: No
+   Master_SSL_CA_File:
+   Master_SSL_CA_Path:
+  Master_SSL_Cert:
+Master_SSL_Cipher:
+   Master_SSL_Key:
+Seconds_Behind_Master: 0
+Master_SSL_Verify_Server_Cert: No
+Last_IO_Errno: 0
+Last_IO_Error:
+   Last_SQL_Errno: 0
+   Last_SQL_Error:
+  Replicate_Ignore_Server_Ids:
+ Master_Server_Id: 216
+  Master_UUID: 21ad8db5-f038-11e3-a14a-0200c0a80ad8
+ Master_Info_File: /usr/local/mysql/data/master.info
+SQL_Delay: 0
+  SQL_Remaining_Delay: NULL
+  Slave_SQL_Running_State: Reading event from the relay log
+   Master_Retry_Count: 86400
+  Master_Bind:
+  Last_IO_Error_Timestamp:
+ Last_SQL_Error_Timestamp:
+   Master_SSL_Crl:
+   Master_SSL_Crlpath:
+   Retrieved_Gtid_Set: 21ad8db5-f038-11e3-a14a-0200c0a80ad8:76793-77026
+Executed_Gtid_Set: 21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-77025
+Auto_Position: 1
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>注：</strong><br></p>
+
+<p>两个Yes代表复制正常<br>
+Slave_IO_Running: Yes  <br>
+Slave_SQL_Running: Yes  <br></p>
+
+<p>基于GTID复制的新特性：<br>
+ Retrieved_Gtid_Set: 21ad8db5-f038-11e3-a14a-0200c0a80ad8:76793-77026<br>
+ Executed_Gtid_Set: 21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-77025<br></p>
+
+<p>Retrieved_Gtid_Set项：记录了relay日志从Master获取了binlog日志的位置<br>
+Executed_Gtid_Set项：记录本机执行的binlog日志位置（如果是从机，包括Master的binlog日志位置和slave本身的binlog日志位置）<br></p>
+
+<p><strong><span id="gg4">四、基于GTID复制增加新的slave</span><br></strong>
+&emsp;&emsp;备份主MySQL数据，记录主gtid_executed&mdash;>将备份数据恢复到从数据目录&mdash;>设置从gtid_purged的值为主的gtid_executed值&mdash;>启动复制即可</p>
+
+<p>1.使用mysqldump备份主数据<br>
+&emsp;&emsp;mysqldump &mdash;all-databases &mdash;single-transaction &mdash;triggers &mdash;routines &mdash;host=127.0.0.1 &mdash;port=3306 &mdash;user=root  &mdash;password=geekwolf > backup.sql<br>
+&emsp;&emsp;亦可以使用xtrabackup也支持GTID：<br>
+&emsp;&emsp;请参考:<a href="http://www.mysqlperformanceblog.com/2013/05/09/how-to-create-a-new-or-repair-a-broken-gtid-based-slave-with-percona-xtrabackup/">http://www.mysqlperformanceblog.com/2013/05/09/how-to-create-a-new-or-repair-a-broken-gtid-based-slave-with-percona-xtrabackup/</a></p>
+
+<p>2.传到从MySQL，恢复数据<br>
+&emsp;&emsp;由于新版本msqldump会记录并设置GTID_PURGED的值等于主的GTID_EXECUTED，所以只需要将sql导入到从库即可</p>
+
+<p>3.启动主从复制<br></p>
+
+<pre><code>从库执行
+mysql &gt; CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_USER='root', MASTER_PASSWORD=geekwolf', MASTER_PORT=3306, MASTER_AUTO_POSITION = 1;
+mysql &gt; START SLAVE;
+</code></pre>
+
+<p><strong><span id="gg5">五、基于GTID复制出错的解决办法</span><br></strong></p>
+
+<p><strong>问题:</strong><br></p>
+
+<pre><code>Slave_IO_Running: No
+Slave_SQL_Running: Yes
+Last_IO_Error: Got fatal error 1236 from master when reading data from binary log: 'The slave is connecting using CHANGE MASTER TO MASTER_AUTO_POSITION = 1, but the master has purged binary logs containing GTIDs that the slave requires.'
+</code></pre>
+
+<p><strong>解决思路:</strong><br></p>
+
+<p>从复制跳过已经丢失的binlog，继续复制或者重新做主从（可以参考上面的操作）</p>
+
+<pre><code>主MySQL：
+mysql&gt; show global variables like '%gtid_executed%';
++---------------+-----------------------------------------------+
+| Variable_name | Value |
++---------------+-----------------------------------------------+
+| gtid_executed | 21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-223937 |
++---------------+-----------------------------------------------+
+1 row in set (0.00 sec)
+
+从MySQL：
+mysql&gt; set global GTID_PURGED="21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-223937";
+ERROR 1840 (HY000): @@GLOBAL.GTID_PURGED can only be set when @@GLOBAL.GTID_EXECUTED is empty.
+
+mysql&gt; reset master;
+Query OK, 0 rows affected (0.19 sec)
+mysql&gt; show global variables like 'GTID_EXECUTED';
++---------------+-----------------------------------------------+
+| Variable_name | Value |
++---------------+-----------------------------------------------+
+| gtid_executed |  |
++---------------+-----------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql&gt; stop slave;
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql&gt; set global GTID_PURGED="21ad8db5-f038-11e3-a14a-0200c0a80ad8:1-223937";
+Query OK, 0 rows affected (0.13 sec)
+
+mysql&gt; start slave;
+Query OK, 0 rows affected (0.04 sec)
+
+mysql&gt; show slave status\G
+[...]
+Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+[...]
+</code></pre>
+
+<p><strong><span id="gg6">注意事项：</span><br></strong>
+&emsp;&emsp;使用基于GTID复制时，不需要再关心master_log_file和master_log_pos，替代的是只需要知道master上的GTID，并且配置在从上即可；<br>
+&emsp;&emsp;记录GTID的有两个全局变量：gtid_executed和gtid_purged<br></p>
+
+<p><strong>与GTID复制相关的参数：</strong></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/gtid.png" alt="" /></p>
+
+<p>GTID_EXECUTED  ：表示已经在该实例上执行过的事务；执行RESET MASTER可以置空该参数；也可以设置GTID_NEXT执行一个空事务来影响GTID_EXECUTED<br>
+GTID_NEXT           ：是SESSION级别参数，表示下一个事务被执行使用的GTID（show variables like &lsquo;gtid_%&rsquo;;）<br>
+GTID_PURGED      ：表示被删除的binlog事务GTID，它是GTID_EXCUTED的子集，MySQL5.6.9，该参数无法被设置<br>
+GTID_OWENED    ：表示正在执行的事务的GTID以及对应的线程ID<br></p>
+
+<p>如果设置MASTER_AUTO_POSITION = 1表示主从复制连接使用基于GTID的方式复制</p>
+
+<pre><code>CHANGE MASTER TO MASTER_HOST='192.168.10.216',MASTER_USER='rep',MASTER_PASSWORD='geekwolf',MASTER_AUTO_POSITION=1;
+</code></pre>
+
+<p>如果在GTID复制模式下想要使用基于文件的复制协议需要MASTER_AUTO_POSITION=0（至少指定其中MASTER_LOG_FILE、MASTER_LOG_POSITION一个）</p>
+
+<pre><code>CHANGE MASTER TO MASTER_HOST='192.168.10.216',MASTER_USER='rep',MASTER_PASSWORD='geekwolf',MASTER_LOG_FILE='mysql-bin.000002',MASTER_LOG_POS=120,MASTER_AUTO_POSITION=0;
+</code></pre>
+
+<p><strong><span id="gg7">参考文档：</span></strong></p>
+
+<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.6/en/replication-gtids-restrictions.html">MYSQL 5.6 GTID-based Replication</a><br>
+<a href="http://www.woqutech.com/?p=1108">MYSQL 5.6 GTID模式下手工删除日志导致备库数据丢失</a><br>
+<a href="http://www.mysqlperformanceblog.com/2013/05/09/how-to-create-a-new-or-repair-a-broken-gtid-based-slave-with-percona-xtrabackup/">How to create a new (or repair a broken) GTID based slave with Percona XtraBackup</a><br></p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[初认识Puppet]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/06/07/chu-ren-shi-puppet/"/>
+    <updated>2014-06-07T16:25:41+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/06/07/chu-ren-shi-puppet</id>
+    <content type="html"><![CDATA[<p><a href="#pp1">自动化运维都有哪些开源软件?</a><br>
+<a href="#pp2">什么是Puppet?</a><br>
+<a href="#pp3">Puppet都有哪些特性?</a><br>
+<a href="#pp4">Puppet适用于哪些场合?</a><br>
+<a href="#pp5">Puppet社区版和企业版本功能上有什么差别?</a><br>
+<a href="#pp6">Puppet支持哪些系统?</a><br>
+<a href="#pp7">Puppet架构是怎样的?</a><br>
+<a href="#pp8">Puppet如何工作的?</a><br>
+<a href="#pp9">Puppet组织结构是怎样的?</a><br>
+<a href="#pp10">学习Puppet去哪里?</a><br></p>
+
+<p><strong><span id="pp1">自动化运维都有哪些开源软件？</span></strong><br></p>
+
+<p>初始化：Kickstart、Cobbler、 Rpmbuild/Xen、Kvm、Lxc、Docker/Openstack、Cloudstack、Opennebula、Eucalyplus<br>
+配置类工具：Chef、Puppet、Func、Cfengine<br>
+命令和控制类工具: Fabric、Salstack、Ansible、Capistrano、Pssh、Dsh、Expect<br>
+监控类工具：Cacti、Nagios、Zabbix、Ganglia<br>
+推荐阅读：<a href="http://hotpu-meeting.b0.upaiyun.com/2014dtcc/post_pdf/liuyu.pdf">http://hotpu-meeting.b0.upaiyun.com/2014dtcc/post_pdf/liuyu.pdf</a><br></p>
+
+<!--more-->
+
+
+<p></p>
+
+<p><strong><span id="pp2">什么是Puppet？</span></strong><br>
+&emsp;&emsp;puppet是一种Linux、Unix平台的集中配置管理系统，使用ruby语言，可管理配置文件、用户、cron任务、软件包、系统服务等。puppet把这些系统实体称之为资源，puppet的设计目标是简化对这些资源的管理以及妥善处理资源间的依赖关系</p>
+
+<p><strong><span id="pp3">Puppet都有哪些特性？</span></strong></p>
+
+<ul>
+<li>可自动化重复任务、快速部署关键性应用及本地或者云端完成主动管理变更和快速扩展架构规模等</li>
+<li>遵循GPL协议，基于ruby开发，2.7.0以后使用Apache 2.0 License</li>
+<li>对于sa来讲是抽象的，只依赖于ruby与facter</li>
+<li>基于C/S架构，配置master和agent</li>
+<li>默认agent每30分钟连接到puppet master</li>
+<li>能管理多达40多种资源，如：file、user 、group、host、packeage、service、cron、exec、yumrepo等，适合整个软件生命周期的管理</li>
+</ul>
+
+
+<p><strong><span id="pp4">puppet的整个生命周期</span></strong><br>
+&emsp;&emsp;供应（provisioning:包安装）&mdash;>配置（configuration）&mdash;>联动(orchestration)&mdash;>报告(reporting)</p>
+
+<p><strong><span id="pp5">Puppet适用于哪些场合？</span></strong></p>
+
+<ul>
+<li>初始化配置、修复、升级、审计</li>
+<li>统一安装、配置管理软件</li>
+<li>统一配置系统优化参数</li>
+<li>定期检测服务是否运行</li>
+<li>快速替换集群时设备的角色</li>
+</ul>
+
+
+<p><strong><span id="pp6">Puppet社区版和企业版本功能上有什么差别？</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/puppet/cb.png" alt="" /></p>
+
+<p>请参考：<a href="http://puppetlabs.com/puppet/enterprise-vs-open-source">http://puppetlabs.com/puppet/enterprise-vs-open-source</a></p>
+
+<p><strong><span id="pp7">Puppet支持哪些系统？</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/puppet/zcos.png" alt="" /></p>
+
+<p><strong><span id="pp8">Puppet架构是怎样的？</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/puppet/ppjg.png" alt="" /></p>
+
+<p><strong><span id="pp9">Puppet如何工作的？</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/puppet/yl.png" alt="" /></p>
+
+<p>&emsp;&emsp;所有配置信息为实现其通用性，在master端通常被定义为modules&mdash;class&mdash;resource（管理和被管理的对象）<br>
+&emsp;&emsp;资源组成类，类封装成模块<br>
+&emsp;&emsp;puppet只定义目标状态，不用关心实现过程；<br>
+module(class(resource))&mdash;>node &lsquo;FQDN&rsquo; {class1,class2}&mdash;>agent(facter)报告facter给master &mdash;>master根据facter信息生成相应的catalog结果&mdash;>agent 应用catalog<br></p>
+
+<p><strong>流程简述如下：</strong></p>
+
+<ol>
+<li>客户端puppetd向master发起认证请求。</li>
+<li>Puppet Master告诉client是合法的。</li>
+<li>客户端puppetd开始调用facter，facter可以探测出主机的一些变量，例如主机名，内存大小，IP地址等。pupppetd 把这些信息通过ssl连接发送到服务器端。</li>
+<li>服务器端的puppet Master 检测客户端的主机名，然后找到manifest里面对应的node配置， 并对该部分内容进行解析，解析分为几个阶段，语法检查，如果语法错误就报错。如果语法没错，就继续解析，解析的结果会生成一个中间的“伪代码”(catalog)，然后把伪代码发给客户端。</li>
+<li>客户端接收到“伪代码”，并且执行。</li>
+<li>客户端在执行时判断有没有file文件，如果有就向Fileserver发起请求。</li>
+<li>客户端继续判断有没有配置Report。如果配置，就把执行结果发送给服务器。</li>
+<li>服务器端把客户端的执行结果写入日志。并可以发送给报告系统(DashBoard)</li>
+</ol>
+
+
+<p><strong><span id="pp10">Puppet组织结构是怎样的？</span></strong><br></p>
+
+<p>Puppet的目录结构描述如下：
+|&mdash; puppet.conf           # 主配置配置文件<br>
+|&mdash; fileserver.conf       #文件服务器配置文件<br>
+|&mdash; auth.conf             #认证配置文件  (只允许域内认证)<br>
+|&mdash; autosign.conf         #自动验证配置文件<br>
+|&mdash; tagmail.conf          # 邮件配置文件（将错误信息发送）<br>
+|&mdash; manifests             # 文件存储目录(puppet会先读取该目录的.pp文件&lt;site.pp>)<br>
+|&mdash; nodes<br>
+| |  | puppetclient.pp   #puppet解析主配置文件所有的模块和节点都在此文件里include<br>
+| |&mdash; site.pp            # 定义puppet相关的变量和默认配置<br>
+| |&mdash; modules.pp         # 加载class类模块文件（include nginx）<br>
+|&mdash;  modules             # 定义模块<br>
+| &mdash;nginx                # 以nginx为例<br>
+|           |&mdash;  file<br>
+|           |&mdash;  manifests<br>
+|           |     |&mdash; init.pp       #类的定义，类名必须与模块名相同<br>
+|           |&mdash;&ndash; templates          # 模块配置目录，可以被模块的manifests引用<br>
+|           |     |&mdash; nginx.erb     #erb模板<br></p>
+
+<p><strong>学习Puppet去哪里？</strong></p>
+
+<p>Puppet相关文档：<a href="http://docs.puppetlabs.com/">http://docs.puppetlabs.com/</a><br>
+常用模块下载地址： <a href="https://forge.puppetlabs.com/">https://forge.puppetlabs.com/</a><br>
+PuppetDashboard下载地址：<a href="https://downloads.puppetlabs.com/dashboard/">https://downloads.puppetlabs.com/dashboard/</a><br>
+PuppetDashboard帮助文档：<a href="http://docs.puppetlabs.com/dashboard/">http://docs.puppetlabs.com/dashboard/</a><br>
+Puppet中文wiki：<a href="http://puppet.wikidot.com/">http://puppet.wikidot.com/</a><br>
+Puppet中文论坛：<a href="http://www.puppetfans.com/">http://www.puppetfans.com/</a><br>
+Puppet运维自动化文档：<a href="http://pan.baidu.com/s/1c0hBMgg">http://pan.baidu.com/s/1c0hBMgg</a><br>
+Puppet简单安装可以参考：<a href="http://www.chenshake.com/puppet-study-notes/#i-3">http://www.chenshake.com/puppet-study-notes/#i-3</a><br></p>
+
+<blockquote><p>参考 南非蜘蛛</p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[MySQL复制原理与配置]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/06/05/mysqlfu-zhi-yuan-li-yu-pei-zhi/"/>
+    <updated>2014-06-05T17:11:56+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/06/05/mysqlfu-zhi-yuan-li-yu-pei-zhi</id>
+    <content type="html"><![CDATA[<p>一、<a href="#r1">Mysql复制基本原理</a><br>
+二、<a href="#r2">Mysql复制中Binlog的三种格式</a><br>
+&emsp;&emsp;&emsp;&emsp;2.1 <a href="#r3">三种格式的介绍</a><br>
+&emsp;&emsp;&emsp;&emsp;2.2 <a href="#r4">Binlog格式的优缺点</a><br>
+&emsp;&emsp;&emsp;&emsp;2.3 <a href="#r5">Binlog基本配置</a><br>
+三、<a href="#r6">Mysql常见两种复制方式</a><br>
+&emsp;&emsp;&emsp;&emsp;3.1 <a href="#r7">异步复制(Asynchronous Replication)</a><br>
+&emsp;&emsp;&emsp;&emsp;3.2 <a href="#r8">半同步复制(Semi-synchroous Replicaion)</a><br>
+四、<a href="#r9">提升主从复制性能的方法</a><br>
+五、<a href="#r10">Mysql复制遇到的一些问题</a><br></p>
+
+<p><strong><span id="r1">一、Mysql复制基本原理</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/replication/fzyl.png" alt="" /></p>
+
+<!--more-->
+
+
+<p></p>
+
+<ol>
+<li>Mysql主库在事务提交时会将数据变更作为Events记录在Binlog中，Mysql主库的sync_binlog参数(默认值为0<br>
+可参考<a href="http://dev.mysql.com/doc/refman/5.6/en/replication-options-binary-log.html#sysvar_sync_binlog">http://dev.mysql.com/doc/refman/5.6/en/replication-options-binary-log.html#sysvar_sync_binlog</a>)控制Binlog日志刷新到磁盘</li>
+<li>主库推送Binlog中的事件到从库的Relay Log，之后从库根据Relay Log重做DML操作</li>
+<li>Mysql通过3个线程完成主从复制：Binlog Dump线程跑在主库，I/O线程和SQL线程跑在从库；<br>
+&emsp;&emsp;当从库启动复制，首先创建I/O线程连接到主库，主库随后创建Binlog Dump线程读取数据库事件并发给I/O线程，I/O线程获取到事件数据后更新到从库的Relay Log中去，之后从库上的SQL线程读取Relay Log中更新的数据库事件并应用<br></li>
+</ol>
+
+
+<p><strong>注释：</strong><br>
+ &emsp;&emsp;从库上两个重要文件：<code>master.info</code>：记录I/O线程连接主库的一些参数；<code>relay-log.info</code>：记录SQL线程应用Relay Log的一些参数<br>
+<strong><span id="r2">二、Mysql复制中Binlog的三种格式</span></strong>
+<strong><span id="r3">2.1 三种格式的介绍</span></strong><br>
+&emsp;&emsp;<strong>Statement (statement-based replication:SBR)：</strong>基于SQL语句级别的Binlog，每条修改数据的SQL都会保存在Binlog里面；<br>
+&emsp;&emsp;<strong>Row(RBR)：</strong>基于行级别，记录每一行数据的变化，也就是将每行数据的变化都记录到Binlog里面，记录得非常详细，单并不记录原始SQL；在复制过程，并不会因为存储过程或者触发器造成主从数据不一致问题，但记录的binlog大小会比Statement格式大很多,CREATE、DROP、ALTER操作只记录原始SQL，而不会记录每行数据的变化到Binlog；<br>
+&emsp;&emsp;<strong>Mixed(MBR):</strong>混合Statement和Row模式，默认是Statement模式记录，某些情况下会切换到Row模式，例如SQL中包含与时间、用户相关的函数等statement无法完成主从复制的操作；<br>
+<strong><span id="r4">2.2 Binlog格式的优缺点</span></strong><br>
+<strong>基于Statement复制(Mysql5.5默认格式):</strong><br>
+<strong>优点：</strong><br>
+&emsp;&emsp;Binlog日志量少，节约IO，和减少了主从网络binlog传输量<br>
+&emsp;&emsp;只记录在master上所执行的语句的细节，以及执行语句的上下文信息<br>
+&emsp;&emsp;同时，审计数据库变的更容易<br></p>
+
+<p><strong>缺点：</strong><br>
+&emsp;&emsp;由于此格式是记录原始执行的SQL，保证能在slave上正确执行必须记录每条语句的上下文信息<br>
+&emsp;&emsp;部分修改数据库时使用的函数可能出现无法复制：sleep()、last_insert_id()、 load_file()、uuid()、user()、found_rows()、sysdate()(除非启动时&mdash;sysdate-is-now=true)<br>
+&emsp;&emsp;可能会导致触发器或者存储过程复制导致数据不一致，如调用NOW()函数<br>
+&emsp;&emsp;INSERT&hellip;SELECT 可能会产生比RBR更多的行级锁，例如没有order by的insert&hellip;select<br>
+&emsp;&emsp;复制需要执行全表扫描(WHERE中没有使用索引)的UPDATE时，需比row请求更多的行级锁<br>
+&emsp;&emsp;对于AUTO_INCREMENT字段的InnoDB引擎表，INSERT会阻塞其他INSERT语句</p>
+
+<p><strong>注：</strong>如果statement不能保证主从正常复制,error日志会有提示：Statement may not be safe to log in statement format<br></p>
+
+<p><strong>基于Row复制:</strong><br>
+<strong>优点：</strong><br>
+&emsp;&emsp;只记录每一行数据变化的细节，不需要记录上下文信息<br>
+&emsp;&emsp;不会出现某些情况下auto_increment columns,timestamps,.triger、function、procedure无法正常复制的问题<br>
+&emsp;&emsp;新的row格式已经有了优化， CREATE、DROP、ALTER操作只记录原始SQL，而不会记录每行数据的变化到Binlog<br>
+&emsp;&emsp;适用于主从复制要求强一致性的环境<br></p>
+
+<p><strong>缺点：</strong><br>
+&emsp;&emsp;update、delete、load data local infile等频繁更新或者删除大量行时会产生大量的binlog日志，会有一定的I/O压力，主从同步产生不必要的流量<br>
+&emsp;&emsp;如：UPDATE products set status=&lsquo;sold&rsquo; where product_id BETWEEN 30000 and 50000;<br>
+&emsp;&emsp;无法很好的进行数据库审计</p>
+
+<p><strong><span id="r5">2.3 Binlog基本配置</span></strong></p>
+
+<p>修改配置文件my.cnf</p>
+
+<pre><code>binlog_format=row                               binlog日志格式 
+max_binlog_size = 512M                          每个日志文件大小
+binlog_cache_size=1M                            二进制日志缓冲大小,uncommitted事务产生的日志写在cache，committed的持久化到磁盘binlog里面，此参数不是全局的，是针对session的
+expire_logs_days = 3                            binlog有效期
+log-bin=/datas/mysql/logs/mysql-bin             binlog日志目录
+relay-log=/datas/mysql/logs/relay-bin           从库中继日志目录
+#slave_skip_errors = all
+</code></pre>
+
+<p><strong><span id="r6">三、Mysql常见两种复制方式</span></strong><br>
+<strong><span id="r7">3.1 异步复制（Asynchronous Replication）</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/replication/ybfz.png" alt="" /></p>
+
+<p>&emsp;&emsp;主库执行完Commit后，在主库写入Binlog日志后即可成功返回客户端，无需等等Binlog日志传送给从库</p>
+
+<p><strong>异步复制主从配置：</strong><br></p>
+
+<p>主 : 192.168.10.216<br>
+从 : 192.168.10.217<br></p>
+
+<p><strong>步骤：</strong>主从版本一致&mdash;>主库授权复制帐号&mdash;>确保开启binlog及主从server_id唯一&mdash;>主库只读，记录主binlog名称及偏移量&mdash;>拷贝主数据文件到从相应位置&mdash;>从库change master to &mdash;>slave start&mdash;>检查两个yes</p>
+
+<p><strong>1.主MySQL配置</strong><br></p>
+
+<pre><code>mysql&gt;GRANT REPLICATION SLAVE ON *.* TO 'rep'@'192.168.10.217'  IDENTIFIED BY  'geekwolf';
+mysql&gt;FLUSH TABLES WITH READ LOCK;
+mysql&gt; SHOW MASTER STATUS;
++------------------+----------+--------------+------------------+-------------------+
+| File | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql-bin.000003 | 120 | | | |
++------------------+----------+--------------+------------------+-------------------+
+1 row in set (0.00 sec)
+将主库数据文件拷贝到从库对应目录
+mysql&gt;UNLOCK TABLES;
+</code></pre>
+
+<p><strong>2.从MySQL配置</strong></p>
+
+<pre><code>mysql&gt;CHANGE MASTER TO MASTER_HOST='192.168.10.216',MASTER_USER='rep',MASTER_PASSWORD='geekwolf',MASTER_LOG_FILE='mysql-bin.000003',MASTER_LOG_POS=120;
+mysql&gt;START  SLAVE;
+mysql&gt; SHOW SLAVE STATUS \G;
+*************************** 1. row ***************************
+   Slave_IO_State: Waiting for master to send event
+  Master_Host: 192.168.10.216
+  Master_User: rep
+  Master_Port: 3306
+Connect_Retry: 1
+  Master_Log_File: mysql-bin.000003
+  Read_Master_Log_Pos: 120
+   Relay_Log_File: relay-bin.000002
+Relay_Log_Pos: 283
+Relay_Master_Log_File: mysql-bin.000003
+ Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+  Replicate_Do_DB:
+  Replicate_Ignore_DB:
+   Replicate_Do_Table:
+   Replicate_Ignore_Table:
+  Replicate_Wild_Do_Table:
+  Replicate_Wild_Ignore_Table:
+   Last_Errno: 0
+   Last_Error:
+ Skip_Counter: 0
+  Exec_Master_Log_Pos: 120
+  Relay_Log_Space: 450
+  Until_Condition: None
+   Until_Log_File:
+Until_Log_Pos: 0
+   Master_SSL_Allowed: No
+   Master_SSL_CA_File:
+   Master_SSL_CA_Path:
+  Master_SSL_Cert:
+Master_SSL_Cipher:
+   Master_SSL_Key:
+Seconds_Behind_Master: 0
+Master_SSL_Verify_Server_Cert: No
+Last_IO_Errno: 0
+Last_IO_Error:
+   Last_SQL_Errno: 0
+   Last_SQL_Error:
+  Replicate_Ignore_Server_Ids:
+ Master_Server_Id: 216
+  Master_UUID: bd2a4c6b-d954-11e3-8c0a-0200c0a80ad8
+ Master_Info_File: /usr/local/mysql/data/master.info
+SQL_Delay: 0
+  SQL_Remaining_Delay: NULL
+  Slave_SQL_Running_State: Slave has read all relay log; waiting for the slave I/O thread to update it
+   Master_Retry_Count: 86400
+  Master_Bind:
+  Last_IO_Error_Timestamp:
+ Last_SQL_Error_Timestamp:
+   Master_SSL_Crl:
+   Master_SSL_Crlpath:
+   Retrieved_Gtid_Set:
+Executed_Gtid_Set:
+Auto_Position: 0
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>注:</strong>
+异步复制中只要binlog不丢失即可保证数据的完整性；当主宕机，从库未收到binlog时，就会丢失数据（主磁盘正常时可以提取差异binlog在从执行），此时就需要用到半同步复制方式</p>
+
+<p><strong><span id="r8">3.2 半同步复制(Semi-synchroous Replicaion)</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/replication/btb.png" alt="" /></p>
+
+<p>&emsp;&emsp;主库每次事务成功提交时并不及时反馈给前端，而是等待其中一个从库也接收到Binlog事务并成功写入Relay Log之后，才返回Commit操作成功给客户端；如此半同步就保证了事务成功提交后，至少有两份日志记录，一份在主库Binlog上，另一份在从库的Relay Log上，从而进一步保证数据完整性；半同步复制很大程度取决于主从网络RTT（往返时延）；以插件形式存在，</p>
+
+<p><strong>半同步复制主从配置：</strong></p>
+
+<p>主 : 192.168.10.216<br>
+从 : 192.168.10.217</p>
+
+<p><strong>1.判断是否支持动态增加插件</strong><br></p>
+
+<pre><code>mysql&gt; select @@have_dynamic_loading;
++------------------------+
+| @@have_dynamic_loading |
++------------------------+
+| YES |
++------------------------+
+</code></pre>
+
+<p><strong>2.检查是否存在半同步插件,分别在主从安装</strong><br>
+/usr/local/mysql/lib/mysql/plugin/semisync_master.so<br>
+/usr/local/mysql/lib/mysql/plugin/semisync_slave.so<br></p>
+
+<p>主MySQL上安装semisync_master.so:<br>
+mysql>install plugin rpl_semi_sync_master SONAME &lsquo;semisync_master.so&rsquo;</p>
+
+<p>从MySQL上安装semisync_slave.so:<br>
+mysql>install plugin rpl_semi_sync_slave SONAME &lsquo;semisync_slave.so&rsquo;</p>
+
+<p>安装后通过show plugins;查看安装的插件</p>
+
+<p><strong>3.分别在主从打开semi-sync(默认关闭)</strong><br>
+主：<br>
+修改my.cnf<br></p>
+
+<pre><code>rpl_semi_sync_master_enabled=1
+rpl_semi_sync_master_timeout=30000(毫秒)   从库宕机或网络故障导致binlog没有及时传送到从库，此时主库上的事务需要等待的时间；此时间内没恢复，MySQL自动调整复制为异步复制模式
+mysql&gt; set global rpl_semi_sync_master_enabled=1; 
+Query OK, 0 rows affected (0.00 sec)
+mysql&gt; set global rpl_semi_sync_master_timeout=30000;
+Query OK, 0 rows affected (0.00 sec)
+</code></pre>
+
+<p><strong>从:</strong><br>
+修改my.cnf<br></p>
+
+<pre><code>rpl_semi_sync_master_enabled=1
+mysql&gt; set global rpl_semi_sync_master_enabled=1; 
+Query OK, 0 rows affected (0.00 sec)
+由于之前配置的复制是异步的，所以需要重启下从库I/O线程(或者直接重启主从stop slave;start slave;)：
+
+mysql&gt; STOP SLAVE  IO_THREAD;
+Query OK, 0 rows affected (0.04 sec)
+mysql&gt; START SLAVE  IO_THREAD;
+Query OK, 0 rows affected (0.00 sec)
+</code></pre>
+
+<p><strong>4.验证</strong><br>
+<strong>主：</strong></p>
+
+<pre><code>mysql&gt; show status like '%semi_sync%';
+</code></pre>
+
+<p><img src="http://geekwolf.github.io/images/mysql/replication/semi.png" alt="" /></p>
+
+<pre><code>Rpl_semi_sync_master_clients: 值为2，表示有2个semi-sync的备库
+Rpl_semi_sync_master_net_avg_wait_time: 表示事务提交后，等待备库响应的平均时间
+Rpl_semi_sync_master_no_times: 表示有几次从半同步切换到异步复制
+Rpl_semi_sync_master_status : 值为ON，表示半同步复制处于打开状态
+Rpl_semi_sync_master_tx_avg_wait_time ：开启Semi-sync，事务返回需要等待的平均时间
+Rpl_semi_sync_master_wait_sessions：当前有几个线程在等备库响应
+Rpl_semi_sync_master_yes_tx : 值为1054，表示主库有1054个事务是通过半同步复制到从库
+Rpl_semi_sync_master_no_tx  : 值为0，表示当前有0个事务不是通过半同步模式同步到从库的
+</code></pre>
+
+<p><strong>从：</strong></p>
+
+<pre><code>检查半同步是否开启
+show status like '%semi_sync%';
+</code></pre>
+
+<p><img src="http://geekwolf.github.io/images/mysql/replication/semion.png" alt="" /></p>
+
+<pre><code>检查复制是否正常
+show slave status \G;
+</code></pre>
+
+<p><strong><span id="r9">四、提升主从复制性能的方法</span></strong></p>
+
+<p><strong>方案1：</strong>多级主从架构，将不同库分开复制到不同从上</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/replication/fzjg.png" alt="" /></p>
+
+<p><strong>注意事项：</strong><br>
+&emsp;&emsp;M2上打开log-slave-updates配置，保证M1传送的binlog能够被记录在M2的RelayLog和Binlog；M2可以选择BLACKHOLE引擎降低M2的I/O；并且Binlog日志的过滤可以在M2去做<br>
+&emsp;&emsp;BLACKHOLE引擎的使用测试参考:
+&emsp;&emsp;<a href="http://jroller.com/dschneller/entry/mysql_replication_using_blackhole_engine">http://jroller.com/dschneller/entry/mysql_replication_using_blackhole_engine</a><br>
+&emsp;&emsp;<a href="http://blog.csdn.net/kylinbl/article/details/8903336">http://blog.csdn.net/kylinbl/article/details/8903336</a></p>
+
+<p><strong>方案2：多线程复制（MySQL5.6+）</strong><br>
+&emsp;&emsp;多线程复制是基于库的，允许从库并行更新，若单库压力大，此处的多线程复制没有意义；从库设置slave_parallel_workers=4表示MySQL从库在复制时启动4个SQL线程<br>
+ &emsp;&emsp;MySQL5.6一下版本可以尝试Transfer补丁<a href="http://dinglin.iteye.com/blog/1888640">http://dinglin.iteye.com/blog/1888640</a><br>
+<strong><span id="r10">五、Mysql复制遇到的一些问题</span></strong><br>
+<strong>1.指定特定的数据库或者表</strong></p>
+
+<pre><code>replicate-do-db  告诉从服务器限制默认数据库(由USE所选择)为db_name的语句的复制，指定多个库时多次使用此参数，一次指定一个库，不能跨数据库更新；需要跨数据库进行更新，使用--replicate-wild-do-table=db_name.%
+比如：
+如果用--replicate-do-db=sales启动从服务器，并且在主服务器上执行下面的语句，UPDATE语句不会复制：
+USE prices; UPDATE sales.january SET amount=amount+1000;
+
+replicate-do-table  只复制某个表 ，支持跨库更新，指定多个表时多次使用此参数，一次指定一个表
+replicate-ignore-db告诉从服务器不要复制默认数据库(由USE所选择)为db_name的语句。要想忽略多个数据库，应多次使用该选项，每个数据库使用一次。如果正进行跨数据库更新并且不想复制这些更新，不应使用该选项。应使用--replicate-wild-ignore-table=db_name.%
+replicate-ignore-table 告诉从服务器线程不要复制更新指定表的任何语句(即使该语句可能更新其它的表)。要想忽略多个表，应多次使用该选项，每个表使用一次。同--replicate-ignore-db对比，该选项可以跨数据库进行更新
+
+replicate-wild-do-table  告诉从服务器线程限制复制更新的表匹配指定的数据库和表名模式的语句。模式可以包含‘%’和‘_’通配符，与LIKE模式匹配操作符具有相同的含义。要指定多个表，应多次使用该选项，每个表使用一次。该选项可以跨数据库进行更新。请读取该选项后面的注意事项。
+例如：--replicate-wild-do-table=foo%.bar%只复制数据库名以foo开始和表名以bar开始的表的更新。
+
+replicate-wild-ignore-table告诉从服务器线程不要复制表匹配给出的通配符模式的语句 
+
+从库增加(同步test库的bench1表，忽略同步mysql库所有表)：
+replicate-wild-do-table=test.bench1
+replicate-wild-ignore-table=mysql.%
+</code></pre>
+
+<p><strong>2.从库复制出错跳过</strong></p>
+
+<pre><code>mysql&gt;SET GLOBAL SQL_SLAVE_SKIP_COUNTER=1;
+</code></pre>
+
+<p><strong>3.log event entry exceeded max_allowed_packet的处理</strong></p>
+
+<p>&emsp;&emsp;适当增加max_allowed_packet大小</p>
+
+<p><strong>4.因主库大量滞后binlog，启动slave时，可能会跑满网卡带宽</strong></p>
+
+<p>&emsp;&emsp;前段时间微博上@zolker遇到这类问题，网友也给了很多解决办法，趁此blog总结下<br>
+&emsp;&emsp;A.级联备库方式，避免主MySQL网卡跑满影响<br>
+&emsp;&emsp;B.脚本的方式每隔几秒(sleep)把io_thread停一会，进行缓解 （这种方法简单、粗暴、有效,但有抖动）<br>
+&emsp;&emsp;C.使用facebook的patch <a href="https://github.com/facebook/mysql-5.6/commit/d3b0c7814090bded6563fee7d46d2ae41ed32a60">https://github.com/facebook/mysql-5.6/commit/d3b0c7814090bded6563fee7d46d2ae41ed32a60</a><br></p>
+
+<p>&emsp;&emsp;以上是本人在学习过程中的笔记，一码一字敲出来的，有错误地方请留言，谢谢~转载请写明出处~</p>
+
+<p><strong>参考文档：</strong></p>
+
+<blockquote><p><a href="http://www.ovaistariq.net/528/statement-based-vs-row-based-replication/">http://www.ovaistariq.net/528/statement-based-vs-row-based-replication/</a><br>
+<a href="http://www.orczhou.com/index.php/2011/06/mysql-5-5-semi-sync-replication-setup-config/">http://www.orczhou.com/index.php/2011/06/mysql-5-5-semi-sync-replication-setup-config/</a><br>
+<a href="http://www.linuxde.net/2013/09/15194.html">http://www.linuxde.net/2013/09/15194.html</a><br>
+<a href="http://dev.mysql.com/doc/refman/5.6/en/replication.html">http://dev.mysql.com/doc/refman/5.6/en/replication.html</a><br>
+《深入浅出MySQL》</p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[MHA高可用部署及测试]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi/"/>
+    <updated>2014-05-17T10:41:14+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi</id>
+    <content type="html"><![CDATA[<p><a href="#t1">一、MHA特性</a><br>
+<a href="#t2">二、MHA工作机制及failover过程解析</a><br>
+<a href="#t3">三、MHA适用的主从架构</a><br>
+<a href="#t4">四、MHA高可用环境的构建</a><br>
+&emsp;&emsp;&emsp;&emsp;4.1 <a href="#t5">实验环境</a><br>
+&emsp;&emsp;&emsp;&emsp;4.2 <a href="#t6">实验大概步骤</a><br>
+&emsp;&emsp;&emsp;&emsp;4.3 <a href="#t7">相关脚本说明</a><br>
+&emsp;&emsp;&emsp;&emsp;4.4 <a href="#t8">MHA部署过程</a><br>
+&emsp;&emsp;&emsp;&emsp;4.5 <a href="#t9">配置VIP的方式</a><br>
+<a href="#t10">五、MHA常用命令</a><br>
+<a href="#t11">六、注意事项</a><br>
+<a href="#t12">七、部署过程遇到的问题</a><br></p>
+
+<h5><span id="t1">一.MHA特性</span></h5>
+
+<p>1.主服务器的自动监控和故障转移 <br>
+&emsp;&emsp;MHA监控复制架构的主服务器，一旦检测到主服务器故障，就会自动进行故障转移。即使有些从服务器没有收到最新的relay log，MHA自动从最新的从服务器上识别差异的relay log并把这些日志应用到其他从服务器上，因此所有的从服务器保持一致性了。MHA通常在几秒内完成故障转移，9-12秒可以检测出主服务器故障，7-10秒内关闭故障的主服务器以避免脑裂，几秒中内应用差异的relay log到新的主服务器上，整个过程可以在10-30s内完成。还可以设置优先级指定其中的一台slave作为master的候选人。由于MHA在slaves之间修复一致性，因此可以将任何slave变成新的master，而不会发生一致性的问题，从而导致复制失败。<br>
+2.交互式主服务器故障转移 <br></p>
+
+<!--more-->
+
+
+<p>&emsp;&emsp;可以只使用MHA的故障转移，而不用于监控主服务器，当主服务器故障时，人工调用MHA来进行故障故障。<br>
+3.非交互式的主故障转移 <br>
+&emsp;&emsp;不监控主服务器，但自动实现故障转移。这种特征适用于已经使用其他软件来监控主服务器状态，比如heartbeat来检测主服务器故障和虚拟IP地址接管，可以使用MHA来实现故障转移和slave服务器晋级为master服务器。<br>
+4.在线切换主服务器 <br>
+&emsp;&emsp;在许多情况下，需要将现有的主服务器迁移到另外一台服务器上。比如主服务器硬件故障，RAID控制卡需要重建，将主服务器移到性能更好的服务器上等等。维护主服务器引起性能下降，导致停机时间至少无法写入数据。另外，阻塞或杀掉当前运行的会话会导致主主之间数据不一致的问题发生。MHA提供快速切换和优雅的阻塞写入，这个切换过程只需要0.5-2s的时间，这段时间内数据是无法写入的。在很多情况下，0.5-2s的阻塞写入是可以接受的。因此切换主服务器不需要计划分配维护时间窗口(呵呵，不需要你在夜黑风高时通宵达旦完成切换主服务器的任务)。<br></p>
+
+<!--more-->
+
+
+<h5><span id="t2">二.MHA工作机制</span></h5>
+
+<p>MHA自动Failover过程解析<br>
+<a href="http://www.mysqlsystems.com/2012/03/figure-out-process-of-autofailover-on-mha.html">http://www.mysqlsystems.com/2012/03/figure-out-process-of-autofailover-on-mha.html</a><br>
+<a href="https://code.google.com/p/mysql-master-ha/wiki/Sequences_of_MHA">https://code.google.com/p/mysql-master-ha/wiki/Sequences_of_MHA</a></p>
+
+<h5><span id="t3">三.MHA适用的主从架构</span> <br></h5>
+
+<p><a href="https://code.google.com/p/mysql-master-ha/wiki/UseCases">https://code.google.com/p/mysql-master-ha/wiki/UseCases</a></p>
+
+<h5><span id="t4">四.MHA高可用环境的构建</span><br></h5>
+
+<h5><span id="t5">4.1 实验环境</span></h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/ar.png" alt="" /></p>
+
+<ul>
+<li>Node1:192.168.10.216 (主)</li>
+<li>Node2:192.168.10.217 (从,主故障切换的备主)</li>
+<li>Node3:192.168.10.218 (从,兼MHA管理节点)</li>
+<li>VIP : 192.168.10.219</li>
+<li>Mysql:Percona-Server-5.6.16-rel64.2-569</li>
+<li>以上节点系统均为CentOS6.5 x64</li>
+</ul>
+
+
+<h5><span id="t6">4.2 实验大概步骤</span></h5>
+
+<ol type="a">
+<li>三节点配置epel的yum源，安装相关依赖包<br></li>
+<li>建立主从复制关系<br></li>
+<li>ssh-keygen实现三台机器之间相互免密钥登录 <br></li>
+<li>三节点安装mha4mysql-node-0.56,node3上安装mha4mysql-manager-0.56 <br></li>
+<li>在node3上管理MHA配置文件<br></li>
+<li>masterha_check_ssh验证ssh信任登录是否成功,masterha_check_repl验证mysql复制是否成功<br></li>
+<li>启动MHA manager，并监控日志文件<br></li>
+<li>测试master(Node1)的mysql宕掉后，是否会自动切换正常<br>
+I . 配置VIP，切换后从自动接管主服务，并对客户端透明<br></li>
+</ol>
+
+
+<h5><span id="t7">4.3 脚本相关说明</span></h5>
+
+<p>MHA node有三个脚本，依赖perl模块<br>
+save_binary_logs：保存和拷贝宕掉的主服务器二进制日志 <br>
+apply_diff_relay_logs:识别差异的relay log事件，并应用到所有从服务器节点 <br>purge_relay_logs:清除relay log日志文件<br></p>
+
+<h5><span id="t8">4.4 MHA部署过程</span></h5>
+
+<p><strong>A.</strong>三节点配置epel的yum源，安装相关依赖包</p>
+
+<pre><code>rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+yum  -y install perl-DBD-MySQL  ncftp
+</code></pre>
+
+<p><strong>B.</strong> 建立主从复制关系</p>
+
+<p>在node1上：</p>
+
+<pre><code>mysql&gt;grant replication slave  on *.* to 'rep'@'192.168.10.%' identified by 'geekwolf';
+mysql&gt;grant all on *.* to 'root'@'192.168.10.%' identified by 'geekwolf';
+mysql&gt;show master status;
+</code></pre>
+
+<p>拷贝node1的data目录同步到node2，node3
+在node2 node3上：</p>
+
+<pre><code>mysql&gt;change master  to  master_host='192.168.10.216', master_user='rep', master_password='geekwolf',master_port=3306, master_log_file='mysql-in.000006',master_log_pos=120,master_connect_retry=1;
+mysql&gt;start slave;
+</code></pre>
+
+<p>每个节点都做好mysql命令的软链</p>
+
+<p><code>ln -s /usr/local/mysql/bin/* /usr/local/bin/</code></p>
+
+<p><strong>C.</strong> ssh-keygen实现三台机器之间相互免密钥登录
+在node1(在其他两个节点一同)执行</p>
+
+<pre><code>ssh-keygen -t rsa 
+ssh-copy-id -i /root/.ssh/id_rsa.pub root@node1 
+ssh-copy-id -i /root/.ssh/id_rsa.pub root@node2 
+ssh-copy-id -i /root/.ssh/id_rsa.pub root@node3
+</code></pre>
+
+<p><strong>D.</strong> 三节点安装mha4mysql-node-0.56,node3上安装mha4mysql-manager-0.56 <br>
+在node1 node2 node3安装mha4mysql-node <br>
+wget <a href="https://googledrive.com/host/0B1lu97m8-haWeHdGWXp0YVVUSlk/mha4mysql-node-0.56.tar.gz">https://googledrive.com/host/0B1lu97m8-haWeHdGWXp0YVVUSlk/mha4mysql-node-0.56.tar.gz</a><br>
+tar xf mha4mysql-node-0.56.tar.gz <br>
+cd mha4mysql-node <br>
+perl Makefile.PL <br>
+make &amp;&amp; make install<br></p>
+
+<p>在node3上安装mha4mysql-manager<br>
+wget <a href="https://googledrive.com/host/0B1lu97m8-haWeHdGWXp0YVVUSlk/mha4mysql-manager-0.56.tar.gz">https://googledrive.com/host/0B1lu97m8-haWeHdGWXp0YVVUSlk/mha4mysql-manager-0.56.tar.gz</a><br>
+tar xf mha4mysql-manager-0.56.tar.gz <br>
+cd mha4mysql-manager-0.56 <br>
+yum install perl-DBD-MySQL perl-Config-Tiny perl-Log-Dispatch perl-Parallel-ForkManager perl-Config-IniFiles perl-Time-HiRes</p>
+
+<p><strong>E.</strong> 在node3上管理MHA配置文件 <br>
+mkdir -p /etc/mha/{app1,scripts} <br>
+cp mha4mysql-manager-0.56/samples/conf/<em> /etc/mha/ <br>
+cp mha4mysql-manager-0.56/samples/scripts/</em> /etc/mha/scripts/ <br>
+mv /etc/mha/app1.cnf /etc/mha/app1/ <br>
+mv /etc/mha/masterha_default.cnf /etc/masterha_default.cnf<br></p>
+
+<p>设置全局配置： <br>
+vim /etc/mha/masterha_default.cnf</p>
+
+<pre><code>[server default]
+user=root
+password=geekwolf
+ssh_user=root
+repl_user=rep
+repl_password=geekwolf
+ping_interval=1
+#shutdown_script=""
+secondary_check_script = masterha_secondary_check -s node1 -s node2 -s node3 --user=root --master_host=node1 --master_ip=192.168.10.216 --master_port=3306
+#master_ip_failover_script="/etc/mha/scripts/master_ip_failover"
+#master_ip_online_change_script="/etc/mha/scripts/master_ip_online_change"
+# shutdown_script= /script/masterha/power_manager
+#report_script=""
+</code></pre>
+
+<p>vim /etc/mha/app1/app1.cnf</p>
+
+<pre><code>[server default] 
+manager_workdir=/var/log/mha/app1
+manager_log=/var/log/mha/app1/manager.log
+[server1] 
+hostname=node1
+master_binlog_dir="/usr/local/mysql/logs"
+candidate_master=1
+[server2]
+hostname=node2
+master_binlog_dir="/usr/local/mysql/logs"
+candidate_master=1
+[server3]
+hostname=node3
+master_binlog_dir="/usr/local/mysql/logs"
+no_master=1
+</code></pre>
+
+<p><strong>注释：</strong> <br>
+&emsp;&emsp;candidate_master=1 表示该主机优先可被选为new master，当多个[serverX]等设置此参数时，优先级由[serverX]配置的顺序决定 <br>
+&emsp;&emsp;secondary_check_script mha强烈建议有两个或多个网络线路检查MySQL主服务器的可用性。默认情况下,只有单一的路线 MHA Manager检查:从Manager to Master,但这是不可取的。MHA实际上可以有两个或两个以上的检查路线通过调用外部脚本定义二次检查脚本参数<br>
+&emsp;&emsp;master_ip_failover_script 在MySQL从服务器提升为新的主服务器时，调用此脚本，因此可以将vip信息写到此配置文件 <br>
+&emsp;&emsp;master_ip_online_change_script 使用masterha_master_switch命令手动切换MySQL主服务器时后会调用此脚本，参数和master_ip_failover_script 类似，脚本可以互用
+&emsp;&emsp;shutdown_script 此脚本(默认samples内的脚本)利用服务器的远程控制IDRAC等，使用ipmitool强制去关机，以避免fence设备重启主服务器，造成脑列现象 <br>
+&emsp;&emsp;report_script 当新主服务器切换完成以后通过此脚本发送邮件报告，可参考使用 <a href="http://caspian.dotconf.net/menu/Software/SendEmail/sendEmail-v1.56.tar.gz">http://caspian.dotconf.net/menu/Software/SendEmail/sendEmail-v1.56.tar.gz</a><br>
+&emsp;&emsp;以上涉及到的脚本可以从mha4mysql-manager-0.56/samples/scripts/*拷贝进行修改使用 <br>
+&emsp;&emsp;其他manager详细配置参数<a href="https://code.google.com/p/mysql-master-ha/wiki/Parameters">https://code.google.com/p/mysql-master-ha/wiki/Parameters</a><br></p>
+
+<p><strong>F.</strong> masterha_check_ssh验证ssh信任登录是否成功,masterha_check_repl验证mysql复制是否成功 <br>
+验证ssh信任：masterha_check_ssh &mdash;conf=/etc/mha/app1/app1.cnf</p>
+
+<pre><code>[root@localhost ~]# masterha_check_ssh --conf=/etc/mha/app1/app1.cnf
+Tue May 13 07:53:15 2014 - [warning] Global configuration file /etc/masterha_default.cnf not found. Skipping.
+Tue May 13 07:53:15 2014 - [info] Reading application default configuration from /etc/mha/app1/app1.cnf..
+Tue May 13 07:53:15 2014 - [info] Reading server configuration from /etc/mha/app1/app1.cnf..
+Tue May 13 07:53:15 2014 - [info] Starting SSH connection tests..
+Tue May 13 07:53:16 2014 - [debug]
+Tue May 13 07:53:15 2014 - [debug] Connecting via SSH from root@node1(192.168.10.216:22) to root@node2(192.168.10.217:22)..
+Tue May 13 07:53:15 2014 - [debug] ok.
+Tue May 13 07:53:15 2014 - [debug] Connecting via SSH from root@node1(192.168.10.216:22) to root@node3(192.168.10.218:22)..
+Tue May 13 07:53:16 2014 - [debug] ok.
+Tue May 13 07:53:16 2014 - [debug]
+Tue May 13 07:53:16 2014 - [debug] Connecting via SSH from root@node2(192.168.10.217:22) to root@node1(192.168.10.216:22)..
+Tue May 13 07:53:16 2014 - [debug] ok.
+Tue May 13 07:53:16 2014 - [debug] Connecting via SSH from root@node2(192.168.10.217:22) to root@node3(192.168.10.218:22)..
+Tue May 13 07:53:16 2014 - [debug] ok.
+Tue May 13 07:53:17 2014 - [debug]
+Tue May 13 07:53:16 2014 - [debug] Connecting via SSH from root@node3(192.168.10.218:22) to root@node1(192.168.10.216:22)..
+Tue May 13 07:53:16 2014 - [debug] ok.
+Tue May 13 07:53:16 2014 - [debug] Connecting via SSH from root@node3(192.168.10.218:22) to root@node2(192.168.10.217:22)..
+Tue May 13 07:53:17 2014 - [debug] ok.
+Tue May 13 07:53:17 2014 - [info] All SSH connection tests passed successfully.
+</code></pre>
+
+<p>验证主从复制：masterha_check_repl &mdash;conf=/etc/mha/app1/app1.cnf</p>
+
+<pre><code>[root@localhost mha]# masterha_check_repl --conf=/etc/mha/app1/app1.cnf
+Tue May 13 08:10:54 2014 - [info] Reading default configuration from /etc/masterha_default.cnf..
+Tue May 13 08:10:54 2014 - [info] Reading application default configuration from /etc/mha/app1/app1.cnf..
+Tue May 13 08:10:54 2014 - [info] Reading server configuration from /etc/mha/app1/app1.cnf..
+Tue May 13 08:10:54 2014 - [info] MHA::MasterMonitor version 0.56.
+Tue May 13 08:10:54 2014 - [info] GTID failover mode = 0
+Tue May 13 08:10:54 2014 - [info] Dead Servers:
+Tue May 13 08:10:54 2014 - [info] Alive Servers:
+Tue May 13 08:10:54 2014 - [info] node1(192.168.10.216:3306)
+Tue May 13 08:10:54 2014 - [info] node2(192.168.10.217:3306)
+Tue May 13 08:10:54 2014 - [info] node3(192.168.10.218:3306)
+Tue May 13 08:10:54 2014 - [info] Alive Slaves:
+Tue May 13 08:10:54 2014 - [info] node2(192.168.10.217:3306) Version=5.6.16-64.2-rel64.2-log (oldest major version between slaves) log-bin:enabled
+Tue May 13 08:10:54 2014 - [info] Replicating from 192.168.10.216(192.168.10.216:3306)
+Tue May 13 08:10:54 2014 - [info] Primary candidate for the new Master (candidate_master is set)
+Tue May 13 08:10:54 2014 - [info] node3(192.168.10.218:3306) Version=5.6.16-64.2-rel64.2-log (oldest major version between slaves) log-bin:enabled
+Tue May 13 08:10:54 2014 - [info] Replicating from 192.168.10.216(192.168.10.216:3306)
+Tue May 13 08:10:54 2014 - [info] Not candidate for the new Master (no_master is set)
+Tue May 13 08:10:54 2014 - [info] Current Alive Master: node1(192.168.10.216:3306)
+Tue May 13 08:10:54 2014 - [info] Checking slave configurations..
+Tue May 13 08:10:54 2014 - [info] read_only=1 is not set on slave node2(192.168.10.217:3306).
+Tue May 13 08:10:54 2014 - [warning] relay_log_purge=0 is not set on slave node2(192.168.10.217:3306).
+Tue May 13 08:10:54 2014 - [info] read_only=1 is not set on slave node3(192.168.10.218:3306).
+Tue May 13 08:10:54 2014 - [warning] relay_log_purge=0 is not set on slave node3(192.168.10.218:3306).
+Tue May 13 08:10:54 2014 - [info] Checking replication filtering settings..
+Tue May 13 08:10:54 2014 - [info] binlog_do_db= , binlog_ignore_db=
+Tue May 13 08:10:54 2014 - [info] Replication filtering check ok.
+Tue May 13 08:10:54 2014 - [info] GTID (with auto-pos) is not supported
+Tue May 13 08:10:54 2014 - [info] Starting SSH connection tests..
+Tue May 13 08:10:55 2014 - [info] All SSH connection tests passed successfully.
+Tue May 13 08:10:55 2014 - [info] Checking MHA Node version..
+Tue May 13 08:10:55 2014 - [info] Version check ok.
+Tue May 13 08:10:55 2014 - [info] Checking SSH publickey authentication settings on the current master..
+Tue May 13 08:10:56 2014 - [info] HealthCheck: SSH to node1 is reachable.
+Tue May 13 08:10:56 2014 - [info] Master MHA Node version is 0.56.
+Tue May 13 08:10:56 2014 - [info] Checking recovery script configurations on node1(192.168.10.216:3306)..
+Tue May 13 08:10:56 2014 - [info] Executing command: save_binary_logs --command=test --start_pos=4 --binlog_dir=/usr/local/mysql/logs --output_file=/var/tmp/save_binary_logs_test --manager_version=0.56 --start_file=mysql-bin.000009
+Tue May 13 08:10:56 2014 - [info] Connecting to root@192.168.10.216(node1:22)..
+  Creating /var/tmp if not exists.. ok.
+  Checking output directory is accessible or not..
+   ok.
+  Binlog found at /usr/local/mysql/logs, up to mysql-bin.000009
+Tue May 13 08:10:56 2014 - [info] Binlog setting check done.
+Tue May 13 08:10:56 2014 - [info] Checking SSH publickey authentication and checking recovery script configurations on all alive slave servers..
+Tue May 13 08:10:56 2014 - [info] Executing command : apply_diff_relay_logs --command=test --slave_user='root' --slave_host=node2 --slave_ip=192.168.10.217 --slave_port=3306 --workdir=/var/tmp --target_version=5.6.16-64.2-rel64.2-log --manager_version=0.56 --relay_log_info=/usr/local/mysql/data/relay-log.info --relay_dir=/usr/local/mysql/data/ --slave_pass=xxx
+Tue May 13 08:10:56 2014 - [info] Connecting to root@192.168.10.217(node2:22)..
+  Checking slave recovery environment settings..
+    Opening /usr/local/mysql/data/relay-log.info ... ok.
+    Relay log found at /usr/local/mysql/logs, up to relay-bin.000006
+    Temporary relay log file is /usr/local/mysql/logs/relay-bin.000006
+    Testing mysql connection and privileges..Warning: Using a password on the command line interface can be insecure.
+ done.
+    Testing mysqlbinlog output.. done.
+    Cleaning up test file(s).. done.
+Tue May 13 08:10:57 2014 - [info] Executing command : apply_diff_relay_logs --command=test --slave_user='root' --slave_host=node3 --slave_ip=192.168.10.218 --slave_port=3306 --workdir=/var/tmp --target_version=5.6.16-64.2-rel64.2-log --manager_version=0.56 --relay_log_info=/usr/local/mysql/data/relay-log.info --relay_dir=/usr/local/mysql/data/ --slave_pass=xxx
+Tue May 13 08:10:57 2014 - [info] Connecting to root@192.168.10.218(node3:22)..
+  Checking slave recovery environment settings..
+    Opening /usr/local/mysql/data/relay-log.info ... ok.
+    Relay log found at /usr/local/mysql/logs, up to relay-bin.000006
+    Temporary relay log file is /usr/local/mysql/logs/relay-bin.000006
+    Testing mysql connection and privileges..Warning: Using a password on the command line interface can be insecure.
+ done.
+    Testing mysqlbinlog output.. done.
+    Cleaning up test file(s).. done.
+Tue May 13 08:10:57 2014 - [info] Slaves settings check done.
+Tue May 13 08:10:57 2014 - [info]
+node1(192.168.10.216:3306) (current master)
+ +--node2(192.168.10.217:3306)
+ +--node3(192.168.10.218:3306)
+Tue May 13 08:10:57 2014 - [info] Checking replication health on node2..
+Tue May 13 08:10:57 2014 - [info] ok.
+Tue May 13 08:10:57 2014 - [info] Checking replication health on node3..
+Tue May 13 08:10:57 2014 - [info] ok.
+Tue May 13 08:10:57 2014 - [warning] master_ip_failover_script is not defined.
+Tue May 13 08:10:57 2014 - [warning] shutdown_script is not defined.
+Tue May 13 08:10:57 2014 - [info] Got exit code 0 (Not master dead).
+MySQL Replication Health is OK.
+</code></pre>
+
+<p><strong>G.</strong> 启动MHA manager，并监控日志文件<br>
+在node1上killall mysqld的同时在node3上启动manager服务</p>
+
+<pre><code>[root@localhost mha]# masterha_manager --conf=/etc/mha/app1/app1.cnf
+Tue May 13 08:19:01 2014 - [info] Reading default configuration from /etc/masterha_default.cnf..
+Tue May 13 08:19:01 2014 - [info] Reading application default configuration from /etc/mha/app1/app1.cnf..
+Tue May 13 08:19:01 2014 - [info] Reading server configuration from /etc/mha/app1/app1.cnf..
+  Creating /var/tmp if not exists.. ok.
+  Checking output directory is accessible or not..
+   ok.
+  Binlog found at /usr/local/mysql/logs, up to mysql-bin.000009
+Tue May 13 08:19:18 2014 - [info] Reading default configuration from /etc/masterha_default.cnf..
+Tue May 13 08:19:18 2014 - [info] Reading application default configuration from /etc/mha/app1/app1.cnf..
+Tue May 13 08:19:18 2014 - [info] Reading server configuration from /etc/mha/app1/app1.cnf..
+</code></pre>
+
+<p>&emsp;&emsp;之后观察node3上/var/log/mha/app1/manager.log日志会发现node1 dead状态，主自动切换到node2上，而node3上的主从配置指向了node2，并且发生一次切换后会生成/var/log/mha/app1/app1.failover.complete文件；<br>
+<strong>手动恢复node1操作：</strong> <br>
+&emsp;&emsp;rm -rf /var/log/mha/app1/app1.failover.complete<br>
+&emsp;&emsp;启动node1上的mysql，重新配置node2 node3 主从指向node1（change master to）<br>
+<strong>MHA Manager后台执行：</strong> <br>
+nohup masterha_manager &mdash;conf=/etc/mha/app1/app1.cnf &lt; /dev/null > /var/log/mha/app1/app1.log 2>&amp;1 &amp; <br>
+守护进程方式参考：
+<a href="https://code.google.com/p/mysql-master-ha/wiki/Runnning_Background">https://code.google.com/p/mysql-master-ha/wiki/Runnning_Background</a><br>
+<a href="ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/weberho:/qmailtoaster/openSUSE_Tumbleweed/x86_64/daemontools-0.76-5.3.x86_64.rpm">ftp://ftp.pbone.net/mirror/ftp5.gwdg.de/pub/opensuse/repositories/home:/weberho:/qmailtoaster/openSUSE_Tumbleweed/x86_64/daemontools-0.76-5.3.x86_64.rpm</a></p>
+
+<h5><span id="t9">4.5 配置VIP的方式</span></h5>
+
+<p><strong>A.</strong>通过全局配置文件实现 <br>
+vim /etc/mha/masterha_default.cnf</p>
+
+<pre><code>[server default]
+  user=root
+  password=geekwolf
+  ssh_user=root
+  repl_user=rep
+  repl_password=geekwolf
+  ping_interval=1
+  secondary_check_script = masterha_secondary_check -s node1 -s node2 -s node3 --user=root --master_host=node1 --master_ip=192.168.10.216 --master_port=3306
+  master_ip_failover_script="/etc/mha/scripts/master_ip_failover"
+  master_ip_online_change_script="/etc/mha/scripts/master_ip_online_change"
+  #shutdown_script= /script/masterha/power_manager
+  #report_script=""
+</code></pre>
+
+<p>修改后的master_ip_failover、master_ip_online_change脚本</p>
+
+<pre><code>#!/usr/bin/env perl
+use strict;
+use warnings FATAL =&gt; 'all';
+use Getopt::Long;
+my (
+    $command, $ssh_user, $orig_master_host, $orig_master_ip,
+    $orig_master_port, $new_master_host, $new_master_ip, $new_master_port
+);
+my $vip = '192.168.10.218'; # Virtual IP
+my $gateway = '192.168.10.1';#Gateway IP
+my $interface = 'eth0'
+my $key = "1";
+my $ssh_start_vip = "/sbin/ifconfig $interface:$key $vip;/sbin/arping -I $interface -c 3 -s $vip $gateway &gt;/dev/null 2&gt;&amp;1";
+my $ssh_stop_vip = "/sbin/ifconfig $interface:$key down";
+GetOptions(
+    'command=s' =&gt; \$command,
+    'ssh_user=s' =&gt; \$ssh_user,
+    'orig_master_host=s' =&gt; \$orig_master_host,
+    'orig_master_ip=s' =&gt; \$orig_master_ip,
+    'orig_master_port=i' =&gt; \$orig_master_port,
+    'new_master_host=s' =&gt; \$new_master_host,
+    'new_master_ip=s' =&gt; \$new_master_ip,
+    'new_master_port=i' =&gt; \$new_master_port,
+);
+exit &amp;main();
+sub main {
+    print "\n\nIN SCRIPT TEST====$ssh_stop_vip==$ssh_start_vip===\n\n";
+    if ( $command eq "stop" || $command eq "stopssh" ) {
+        # $orig_master_host, $orig_master_ip, $orig_master_port are passed.
+        # If you manage master ip address at global catalog database,
+        # invalidate orig_master_ip here.
+        my $exit_code = 1;
+        eval {
+            print "Disabling the VIP on old master: $orig_master_host \n";
+            &amp;stop_vip();
+            $exit_code = 0;
+        };
+        if ($@) {
+            warn "Got Error: $@\n";
+            exit $exit_code;
+        }
+        exit $exit_code;
+    }
+    elsif ( $command eq "start" ) {
+        # all arguments are passed.
+        # If you manage master ip address at global catalog database,
+        # activate new_master_ip here.
+        # You can also grant write access (create user, set read_only=0, etc) here.
+        my $exit_code = 10;
+        eval {
+            print "Enabling the VIP - $vip on the new master - $new_master_host \n";
+            &amp;start_vip();
+            $exit_code = 0;
+        };
+        if ($@) {
+            warn $@;
+            exit $exit_code;
+        }
+        exit $exit_code;
+    }
+    elsif ( $command eq "status" ) {
+        print "Checking the Status of the script.. OK \n";
+        `ssh $ssh_user\@cluster1 \" $ssh_start_vip \"`;
+        exit 0;
+    }
+    else {
+        &amp;usage();
+        exit 1;
+    }
+}
+# A simple system call that enable the VIP on the new master
+sub start_vip() {
+    `ssh $ssh_user\@$new_master_host \" $ssh_start_vip \"`;
+}
+# A simple system call that disable the VIP on the old_master
+sub stop_vip() {
+    `ssh $ssh_user\@$orig_master_host \" $ssh_stop_vip \"`;
+}
+sub usage {
+    print
+    "Usage: master_ip_failover --command=start|stop|stopssh|status --orig_master_host=host --orig_master_ip=ip --orig_master_port=port --new_master_host=host --new_master_ip=ip --new_master_port=port\n";
+}
+</code></pre>
+
+<p><strong>B.</strong>通过第三方HA（keepalived、heartbeat）实现VIP，以keepalived为例 <br>
+以node1 node2互为主备进行配置keepalived <br>
+在node1 node2上分别下载安装keepalived <br>
+wget <a href="http://www.keepalived.org/software/keepalived-1.2.13.tar.gz">http://www.keepalived.org/software/keepalived-1.2.13.tar.gz</a> <br>
+yum -y install popt-* <br>
+./configure &mdash;prefix=/usr/local/keepalived &mdash;enable-snmp <br>
+make &amp;&amp; make install <br>
+cp /usr/local/keepalived/etc/rc.d/init.d/keepalived /etc/rc.d/init.d/ <br>
+cp /usr/local/keepalived/etc/sysconfig/keepalived /etc/sysconfig/<br>
+chmod +x /etc/rc.d/init.d/keepalived <br>
+chkconfig keepalived on <br>
+mkdir /etc/keepalived <br>
+ln -s /usr/local/keepalived/sbin/keepalived /usr/sbin<br></p>
+
+<p>修改node1(192.168.10.216)配置文件 <br>
+vim /etc/keepalived/keepalived.conf</p>
+
+<pre><code>! Configuration File for keepalived
+global_defs {
+ router_id MHA 
+ notification_email {
+ root@localhost   #接收邮件，可以有多个，一行一个
+}
+ #当主、备份设备发生改变时，通过邮件通知
+ notification_email_from  m@localhost
+ #发送邮箱服务器
+ smtp_server 127.0.0.1
+ #发送邮箱超时时间
+ smtp_connect_timeout 30
+ }
+
+vrrp_script check_mysql {
+     script "/etc/keepalived/check_mysql.sh"
+}
+vrrp_sync_group VG1 {
+    group {
+          VI_1
+    }
+notify_master "/etc/keepalived/master.sh"
+}
+
+vrrp_instance VI_1 {
+     state master     
+     interface eth0   
+     virtual_router_id 110
+     priority 100            
+     advert_int 1
+     nopreempt #不抢占资源，意思就是它活了之后也不会再把主抢回来
+
+     authentication {
+     # 认证方式，可以是PASS或AH两种认证方式
+     auth_type PASS
+     # 认证密码
+     auth_pass geekwolf
+     }
+track_script {
+     check_mysql
+}
+virtual_ipaddress {
+     192.168.10.219
+     }
+
+}
+</code></pre>
+
+<p>修改node2(192.168.10.217)配置文件 <br>
+vim /etc/keepalived/keepalived.conf</p>
+
+<pre><code>! Configuration File for keepalived
+global_defs {
+ router_id MHA 
+ notification_email {
+ root@localhost   #接收邮件，可以有多个，一行一个
+}
+ #当主、备份设备发生改变时，通过邮件通知
+ notification_email_from  m@localhost
+ #发送邮箱服务器
+ smtp_server 127.0.0.1
+ #发送邮箱超时时间
+ smtp_connect_timeout 30
+ }
+
+vrrp_script check_mysql {
+     script "/etc/keepalived/check_mysql.sh"
+}
+vrrp_sync_group VG1 {
+    group {
+          VI_1
+    }
+notify_master "/etc/keepalived/master.sh"
+}
+vrrp_instance VI_1 {
+     state backup    
+     interface eth0    
+     virtual_router_id 110
+     priority 99            
+     advert_int 1
+
+     authentication {
+     # 认证方式，可以是PASS或AH两种认证方式
+     auth_type PASS
+     # 认证密码
+     auth_pass geekwolf
+     }
+track_script {
+     check_mysql
+}
+virtual_ipaddress {
+     192.168.10.219
+     }
+
+}
+</code></pre>
+
+<p>check_mysql.sh</p>
+
+<pre><code>#!/bin/bash
+MYSQL=/usr/local/mysql/bin/mysql
+MYSQL_HOST=127.0.0.1
+MYSQL_USER=root
+MYSQL_PASSWORD=geekwolf
+CHECK_TIME=3
+#mysql  is working MYSQL_OK is 1 , mysql down MYSQL_OK is 0
+MYSQL_OK=1
+function check_mysql_helth (){
+$MYSQL -h $MYSQL_HOST -u $MYSQL_USER -p $MYSQL_PASSWORD -e "show status;" &gt;/dev/null 2&gt;&amp;1
+if [ $? = 0 ] ;then
+     MYSQL_OK=1
+else
+     MYSQL_OK=0
+fi
+     return $MYSQL_OK
+}
+while [ $CHECK_TIME -ne 0 ]
+do
+     let "CHECK_TIME -= 1"
+     check_mysql_helth
+if [ $MYSQL_OK = 1 ] ; then
+     CHECK_TIME=0
+     exit 0
+fi
+if [ $MYSQL_OK -eq 0 ] &amp;&amp;  [ $CHECK_TIME -eq 0 ]
+then
+     pkill keepalived
+exit 1
+fi
+sleep 1
+done
+</code></pre>
+
+<p>master.sh</p>
+
+<pre><code>#!/bin/bash
+VIP=192.168.10.219
+GATEWAY=1.1
+/sbin/arping -I eth0 -c 5 -s $VIP $GATEWAY &amp;&gt;/dev/null
+</code></pre>
+
+<p>chmod +x /etc/keepalived/check_mysql.sh <br>
+chmod +x /etc/keepalived/master.sh</p>
+
+<h5><span id="t10">五.MHA常用命令</span></h5>
+
+<p>查看manager状态 <br>
+masterha_check_status &mdash;conf=/etc/mha/app1/app1.cnf</p>
+
+<p>查看免密钥是否正常 <br>
+masterha_check_ssh &mdash;conf=/etc/mha/app1/app1.cnf</p>
+
+<p>查看主从复制是否正常 <br>
+masterha_check_repl &mdash;conf=/etc/mha/app1/app1.cnf</p>
+
+<p>添加新节点server4到配置文件 <br>
+masterha_conf_host &mdash;command=add &mdash;conf=/etc/mha/app1/app1.cnf &mdash;hostname=geekwolf &mdash;block=server4 &mdash;params=&ldquo;no_master=1;ignore_fail=1&rdquo;
+删除server4节点 <br>
+masterha_conf_host &mdash;command=delete &mdash;conf=/etc/mha/app1/app1.cnf &mdash;block=server4</p>
+
+<p><strong>注：</strong> <br>
+block:为节点区名，默认值 为[server_$hostname],如果设置成block=100，则为[server100]
+params:参数，分号隔开(参考<a href="https://code.google.com/p/mysql-master-ha/wiki/Parameters">https://code.google.com/p/mysql-master-ha/wiki/Parameters</a>)</p>
+
+<p>关闭manager服务 <br>
+masterha_stop &mdash;conf=/etc/mha/app1/app1.cnf</p>
+
+<p>主手动切换(前提不要启动masterha_manager服务) <br>
+在主node1存活情况下进行切换 <br>
+交互模式： <br>
+masterha_master_switch &mdash;master_state=alive &mdash;conf=/etc/mha/app1/app1.cnf &mdash;new_master_host=node2 <br>
+非交互模式： <br>
+masterha_master_switch &mdash;master_state=alive &mdash;conf=/etc/mha/app1/app1.cnf &mdash;new_master_host=node2 &mdash;interactive=0 <br>
+在主node1宕掉情况下进行切换 <br>
+masterha_master_switch &mdash;master_state=dead &mdash;conf=/etc/mha/app1/app1.cnf &mdash;dead_master_host=node1 &mdash;dead_master_ip=192.168.10.216 &mdash;dead_master_port=3306 &mdash;new_master_host=192.168.10.217
+详细请参考:<a href="https://code.google.com/p/mysql-master-ha/wiki/TableOfContents?tm=6">https://code.google.com/p/mysql-master-ha/wiki/TableOfContents?tm=6</a>
+*</p>
+
+<h5><span id="t11">六.注意事项</span> <br></h5>
+
+<p><strong>A.</strong> 以上两种vip切换方式，建议采用第一种方法 <br>
+<strong>B.</strong> 发生主备切换后，manager服务会自动停掉，且在/var/log/mha/app1下面生成<br>app1.failover.complete，若再次发生切换需要删除app1.failover.complete文件<br>
+<strong>C.</strong> 测试过程发现一主两从的架构(两从都设置可以担任主角色candidate_master=1)，当旧主故障迁移到备主后，删除app1.failover.complete，再次启动manager，停掉新主后，发现无法正常切换(解决方式：删除/etc/mha/app1/app1.cnf里面的旧主node1的信息后，重新切换正常) <br>
+<strong>D.</strong> arp缓存导致切换VIP后，无法使用问题 <br>
+<strong>E.</strong> 使用Semi-Sync能够最大程度保证数据安全<br>
+<strong>F.</strong> Purge_relay_logs脚本删除中继日志不会阻塞SQL线程，在每台从节点上设置计划任务定期清除中继日志<br>
+&emsp;&emsp;0 5 * * * root /usr/bin/purge_relay_logs &mdash;user=root &mdash;password=geekwolf &mdash;disable_relay_log_purge >> /var/log/mha/purge_relay_logs.log 2>&amp;1</p>
+
+<h5><span id="t12">七.部署过程遇到的问题</span></h5>
+
+<p><strong>问题1：</strong>
+[root@node1 mha4mysql-node-0.56]# perl Makefile.PL <br>
+Can&rsquo;t locate ExtUtils/MakeMaker.pm in @INC (@INC contains: inc /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at inc/Module/Install/Makefile.pm line 4.  <br>
+BEGIN failed&mdash;compilation aborted at inc/Module/Install/Makefile.pm line 4.
+Compilation failed in require at inc/Module/Install.pm line 283.  <br>
+Can&rsquo;t locate ExtUtils/MakeMaker.pm in @INC (@INC contains: inc /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/ <br>vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at inc/Module/Install/Can.pm line 6.  <br>
+BEGIN failed&mdash;compilation aborted at inc/Module/Install/Can.pm line 6.  <br>
+Compilation failed in require at inc/Module/Install.pm line 283.  <br>
+Can&rsquo;t locate ExtUtils/MM_Unix.pm in @INC (@INC contains: inc /usr/local/lib64/ <br>perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at inc/Module/Install/ <br>Metadata.pm line 349.  <br>
+<strong>解决办法：</strong>  <br>
+yum -y install perl-CPAN perl-devel perl-DBD-MySQL</p>
+
+<p><strong>问题2：</strong>  <br>
+Can&rsquo;t locate Time/HiRes.pm in @INC (@INC contains: /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at /usr/local/share/perl5/MHA/SSHCheck.pm line 28.  <br>
+BEGIN failed&mdash;compilation aborted at /usr/local/share/perl5/MHA/SSHCheck.pm line 28.  <br>
+Compilation failed in require at /usr/local/bin/masterha_check_ssh line 25.
+BEGIN failed&mdash;compilation aborted at /usr/local/bin/masterha_check_ssh line 25. <br>
+<strong>解决办法</strong>：  <br>
+yum -y install perl-Time-HiRes</p>
+
+<p><strong>问题3：</strong>
+<img src="http://geekwolf.github.io/images/mysql/mhaq.jpg" alt="" />
+<strong>解决办法:</strong> <br>
+每个节点都做好mysql命令的软链 <br>
+ln -s /usr/local/mysql/bin/* /usr/local/bin/<br></p>
+
+<p><strong>参考文档：</strong></p>
+
+<blockquote><p><a href="https://code.google.com/p/mysql-master-ha">https://code.google.com/p/mysql-master-ha</a> <br>
+<a href="http://blog.chinaunix.net/uid-28437434-id-3476641.html">http://blog.chinaunix.net/uid-28437434-id-3476641.html</a></p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[存储引擎介绍及适用场景]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/04/23/cun-chu-yin-qing-jie-shao-ji-gua-yong-chang-jing/"/>
+    <updated>2014-04-23T14:05:56+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/04/23/cun-chu-yin-qing-jie-shao-ji-gua-yong-chang-jing</id>
+    <content type="html"><![CDATA[<p>查看当前的默认存储引擎<br>
+<code>  show variables  like 'table_type';</code></p>
+
+<p>查看当前数据库支持的引擎<br>
+<code>   show engines \G;</code><br>
+<code>   show variables like 'have%';</code></p>
+
+<!--more-->
+
+
+<p>创建表时指定存储引擎<br>
+<code>   create table ai (i bigint(20) not null auto_increment,primary key(i));</code><br></p>
+
+<p>修改表引擎<br>
+<code>  alter table ai engine=innodb;</code></p>
+
+<p><strong>常见Mysql数据库引擎对比：</strong></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/engines.png" alt="" /></p>
+
+<h5>一、MyISAM引擎特点：<br></h5>
+
+<p>在磁盘存储成3个文件，文件名和表名一样，但扩展名分别为：<br>
+.frm        (存储表定义)<br>
+.MYD     （MYData，存储数据）<br>
+.MYI       （MYIndex，存储索引）<br>
+其中数据文件和索引文件可以分开在不同目录，平均分布IO</p>
+
+<p>创建表时指定数据和索引路径：<br></p>
+
+<p><code>create table geekwolf (id int,c varchar(10)) data directory='/data/data/' index directory='/data/index' engine='MyISAM';</code></p>
+
+<p>MyISAM的表可能出现损坏的解决办法：<br>
+check table geekwolf；检查表的健康情况<br>
+repair table geekwolf；修改表<br></p>
+
+<p>MyISAM的表引擎支持3种不同的存储格式：<br>
+<strong>静态表</strong>（默认格式，固定长度，存储时按照列宽度定义补足空格；在查询时会丢失尾部的空格）<br>
+<strong>动态表</strong>（频繁更新删除记录会产生碎片，占用空间相对较少，需要定期执行optimize table 或myisamchk -r来改善性能）<br>
+<strong>压缩表</strong> （由myisampack工具创建）<br></p>
+
+<p><strong>适用场景：</strong><br>
+以读操作和插入操作为主，只有很少的更新和删除操作，并且对事务的完整性，并发性要求不是很高的场景</p>
+
+<h5>二、INNODB引擎特点：<br></h5>
+
+<p><strong>1.自动增长列：</strong><br></p>
+
+<pre><code>InnoDB表，自动增长列必须是索引，如果是组合索引，必须是组合索引的第一列；&lt;br&gt;
+对于MyISAM引擎表，自动增长列可以是组合索引的其他列，这样插入记录后，自动增长列是按照组合索引的前面激烈进行排序后递增的&lt;br&gt;
+创建MyISAM表autoincre_demo&lt;br&gt;
+</code></pre>
+
+<p><code>    create table autoincre_demo (d1 smallint not null auto_increment,d2 smallint not null,name varchar(10),index(d2.d1)) engine=myisam;</code></p>
+
+<p>如图所示：自动增长列是d1作为组合索引的第二列,插入记录后，发现增长列是按照组合索引的第一列d2进行排序后递增的</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/autoincre.png" alt="" /><br></p>
+
+<p><strong>2.外键约束：</strong>
+  Innodb引擎支持外键，在创建外键时，要求父表必须有对应的索引，子表在创建外键的时候也会自动创建对应的索引<br>
+  外键信息可以通过show table status like &lsquo;test&rsquo; \G;  show create table &lsquo;test&rsquo;;<br></p>
+
+<p><strong>3.存储方式：</strong><br>
+<strong>A.</strong> 使用共享表空间，这种方式创建的表结果保存在.frm文件，数据和索引保存在innodb_data_home_dir innodb_data_file_path定义的表空间中<br>
+<strong>B.</strong>多表空间存储，表结构保存在.frm文件中，但是每个表的数据和索引单独存放在.ibd中；每个分区对于单独的.ibd<br>
+   （需要开启innodb_file_per_table=1）<br>
+ 对于使用多表空间的表可以方便进行单表备份恢复，简单复制ibd和frm文件的方法因没有共享表空间的字典信息，而无法使用；多表空间情况，因为Innodb把内部的数据字典和在线重做日志存放在共享表空间里面</p>
+
+<p><strong>使用此语句删除.ibd文件：</strong><br>
+<code>ALTER TABLE tbl_name DISCARD TABLESPACE;</code><br>
+要把备份的.ibd文件还原到表中，需把此文件复制到数据库目录中，然后书写此语句：<br>
+<code>ALTER TABLE tbl_name IMPORT TABLESPACE;</code></p>
+
+<p><strong>适用场景：</strong><br>
+需要事务处理，对事务的完整性要求高，并发条件下要求数据一致性的计费系统或者财务系统等对数据准心要求比较搞的系统（5.5+默认引擎）</p>
+
+<h5>三、MEMORY引擎：</h5>
+
+<p> <strong>A.</strong>每个MEMORY表实际对应一个磁盘文件.frm，数据存放在内存，默认采用HASH索引（也可以设置撑Btree索引），服务关闭数据会丢失<br>
+ <strong>B.</strong>是否memory表中的内存可以通过delete from 或者truncate 或者drop table<br>
+<strong>C.</strong>memory表可以放置数据量的大小受到max_heap_table_size变量约束，默认16M，在定义表时可以用MAX_ROWS指定表的最大行数<br>
+<strong>D.</strong>使用环境：用于内容变化不频繁或者作为统计操作的中间结果表</p>
+
+<p><strong>适用场景：</strong><br>
+一般用于更新不太频繁的小表，用以快速得到访问结果的环境，但对表大小有限制</p>
+
+<h5>四、TOKUDB引擎：<br></h5>
+
+<p>   具有高压缩率高效的插入性能，支持大多数在线DDL<br>
+   与InnoDB引擎对比测试：<a href="http://www.tokutek.com/resources/tokudb-vs-innodb/">http://www.tokutek.com/resources/tokudb-vs-innodb/</a><br>
+   <strong>特性：</strong><br></p>
+
+<pre><code>使用Fractal树索引保证了高效的插入性能
+优秀的压缩特性，比InnoDB高近10倍
+Hot Schema Changes特性支持在线创建索引和添加/删除属性列等DDL操作
+使用Bulk Loader达到快速加载大数据量
+提供主从延迟消除技术
+支持ACID和MVCC
+</code></pre>
+
+<p><strong>适用场景：</strong><br>
+日志数据，日志通常插入频繁切存储量大；<br>
+历史数据，通常不会再有写操作，可以利用TokuDB的高压缩特性存储；<br>
+在线DDL较频繁的场景，使用TokuDB可以大大增加系统可用性；</p>
+
+<p><strong>注：</strong>
+具体使用哪种引擎要根据自己的业务的特点去决定</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[理解MySQL运算符和常用内置函数]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/04/09/li-jie-mysqlyun-suan-fu/"/>
+    <updated>2014-04-09T14:56:41+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/04/09/li-jie-mysqlyun-suan-fu</id>
+    <content type="html"><![CDATA[<h5>一、MySQL中的运算符</h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/suanshu.png" alt="" /></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/lj.png" alt="" /></p>
+
+<!--more-->
+
+
+<p><strong>注意事项：<br>
+1.在除法运算和模数运算中，如果除数是0，将是非法除数，结果返回NULL</strong><br>
+&emsp;取模运算中，也可以用MOD(a,b)函数或者a%b</p>
+
+<pre><code>mysql&gt; select 1/0, 100%0;
++------+-------+
+| 1/0 | 100%0 |
++------+-------+
+| NULL | NULL |
++------+-------+
+1 row in set (0.01 sec)
+mysql&gt; select 3%2,mod(3,2);
++------+----------+
+| 3%2 | mod(3,2) |
++------+----------+
+| 1 | 1 |
++------+----------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>2.NULL只能用&lt;=>进行比较，其他的比较运算符时返回NULL</strong></p>
+
+<pre><code>mysql&gt; select 'a'&lt;'b','a'&lt;'a',1&lt;2,null&lt;=&gt;null;
++---------+---------+-----+-------------+
+| 'a'&lt;'b' | 'a'&lt;'a' | 1&lt;2 | null&lt;=&gt;null |
++---------+---------+-----+-------------+
+| 1 | 0 | 1 | 1 |
++---------+---------+-----+-------------+
+1 row in set (0.02 sec)
+mysql&gt; select 'a'&lt;'b','a'&lt;'a',1&lt;2,null&lt;null;
++---------+---------+-----+-----------+
+| 'a'&lt;'b' | 'a'&lt;'a' | 1&lt;2 | null&lt;null |
++---------+---------+-----+-----------+
+| 1 | 0 | 1 | NULL |
++---------+---------+-----+-----------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>3.BETWEEN IN</strong><br>
+&emsp;between运算符使用“a BETWEEN min AND max”当a大于等于min并且小于等于max返回1，否则返回0
+&emsp;IN运算符使用&#8221;a IN（values1,values2,&hellip;)&ldquo;，当a的值存在于列表中时，则郑鄂表达式返回值1，否则0</p>
+
+<pre><code>mysql&gt; select 10 between 10 and 20,9 between 10 and 20;
++----------------------+---------------------+
+| 10 between 10 and 20 | 9 between 10 and 20 |
++----------------------+---------------------+
+| 1 | 0 |
++----------------------+---------------------+
+1 row in set (0.00 sec)
+mysql&gt; select 1 in(1,2,3),'t' in ('t','a','b','f'),0 in(1,2);
++-------------+--------------------------+-----------+
+| 1 in(1,2,3) | 't' in ('t','a','b','f') | 0 in(1,2) |
++-------------+--------------------------+-----------+
+| 1 | 1 | 0 |
++-------------+--------------------------+-----------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>4.REGEXP运算符格式&#8221;str REGEXP str_pat&#8221;</strong><br>
+&emsp;当str字符串中含有str_pat相匹配的字符串时返回1，否则0</p>
+
+<pre><code>mysql&gt; select 'abcdef' regexp 'ac','abcdef' regexp 'ab','abcdefg' regexp 'k';
++----------------------+----------------------+----------------------+
+| 'abcdef' regexp 'ac' | 'abcdef' regexp 'ab' | 'abcdefg' regexp 'k' |
++----------------------+----------------------+----------------------+
+| 0 | 1 | 0 |
++----------------------+----------------------+----------------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>5. 逻辑与AND和逻辑或OR</strong><br>
+&emsp;AND：当所有操作数都为非零，并且不为NULL时，返回1；当一个或多个为0时，返回0；操作数任何一个为NULL，则返回NULL<br>
+&emsp;OR   : 当两个操作数均为非NULL值时，如有任意一个为非零值，则返回1，否则0；<br>
+&emsp;&emsp;&emsp; 当有一个操作数为NULL时，如另外一个为非0，则结果1，否则NULL;<br>
+&emsp;&emsp;&emsp; 如果两个操作数均为NULL，则所得结果为NULL</p>
+
+<pre><code>mysql&gt; select (1 and 1),(0 and 1),(3 and 1),(1 and null);
++-----------+-----------+-----------+--------------+
+| (1 and 1) | (0 and 1) | (3 and 1) | (1 and null) |
++-----------+-----------+-----------+--------------+
+| 1 | 0 | 1 | NULL |
++-----------+-----------+-----------+--------------+
+1 row in set (0.00 sec)
+mysql&gt; select (1 or 0),(0 or 0),(1 or null),(1 or 1),(null or null);
++----------+----------+-------------+----------+----------------+
+| (1 or 0) | (0 or 0) | (1 or null) | (1 or 1) | (null or null) |
++----------+----------+-------------+----------+----------------+
+| 1 | 0 | 1 | 1 | NULL |
++----------+----------+-------------+----------+----------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>6.位运算</strong><br>
+&emsp;位与对多个操作数的二进制位做逻辑与操作<br></p>
+
+<pre><code>mysql&gt; select bin(2);
++--------+
+| bin(2) |
++--------+
+| 10 |
++--------+
+1 row in set (0.00 sec)
+mysql&gt; select bin(3);
++--------+
+| bin(3) |
++--------+
+| 11 |
++--------+
+1 row in set (0.00 sec)
+mysql&gt; select bin(100);
++----------+
+| bin(100) |
++----------+
+| 1100100 |
++----------+
+1 row in set (0.00 sec)
+mysql&gt; select 2&amp;3&amp;100;
++---------+
+| 2&amp;3&amp;100 |
++---------+
+| 0 |
++---------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>7.位取反</strong><br>
+&emsp;在MySQL中，常量数字默认会以8个字节来表示，8字节就是64位，常量1的二进制表示为63个0加1个1，位取反后就是63个1加1个0，转换成十进制后就是18446744073709551614</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/qf.png" alt="" /></p>
+
+<p><strong>8.位右移</strong><br></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/wyy.png" alt="" /></p>
+
+<h5>二、运算符的优先级</h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/yxj.png" alt="" /></p>
+
+<h5>三、常用内置函数</h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/strfun.png" alt="" /></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/numfun.png" alt="" /></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/timefun.png" alt="" /></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/otherfun.png" alt="" /></p>
+
+<p><strong>注意事项：</strong><br>
+date_format(date,fmt)fmt格式:<br>
+<a href="http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-format">http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-format</a><br>
+date_add(date,INTERVAL expr type) type类型：<br>
+<a href="http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-add">http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-add</a></p>
+
+<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.5/en/functions.html">http://dev.mysql.com/doc/refman/5.5/en/functions.html</a></p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Mysql支持的数据类型]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/04/08/mysqlzhi-chi-de-shu-ju-lei-xing/"/>
+    <updated>2014-04-08T19:36:14+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/04/08/mysqlzhi-chi-de-shu-ju-lei-xing</id>
+    <content type="html"><![CDATA[<h5>一、数值类型</h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/numbers.png" alt="" /></p>
+
+<p><strong>注意事项：</strong><br>
+<strong>1. int类型里面默认的数据宽度是11，即int(11)</strong><br>
+&emsp;关于zerofill，在数字位数不够的空间用字符0填充<br>
+&emsp;例如：</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/n2.png" alt="" /></p>
+
+<p><strong>2.整数类型有AUTO_INCREMENT的属性</strong><br>
+&emsp;AUTO_INCREMENT的值一般从1开始，每行增加1，插入NULL到一个AUTO_INCREMENT列时，Mysql插入一个比该列中当前最大值大1的值<br>
+&emsp;一个表中最多只能有一个AUTO_INCREMENT列<br>
+&emsp;使用AUTO_INCREMENT的条件：<br>
+&emsp;该列应该定义为NOT NULL，并且为PRIMARY KEY 或者UNIQUE键<br></p>
+
+<!--more-->
+
+
+<p>&emsp;例如：</p>
+
+<pre><code>CREATE TABLE AI(ID INT AUTO_INCREMENT NOT NULL PRIMARY KEY);
+CREATE TABLE AI(ID INT AUTO_INCREMENT NOT NULL ,PRIMARY KEY(ID));
+CREATE TABLE AI(ID INT AUTO_INCREMENT NOT NULL ,UNIQUE(ID));
+</code></pre>
+
+<p><strong>3.BIT位数据类型查询方式</strong><br>
+&emsp;bit位数据类型列不能直接查询得出结果，使用bin()显示为二进制格式，或者hex()显示为十六进制格式函数进行读取</p>
+
+<p>&emsp;例如：</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/n3.png" alt="" /></p>
+
+<h5>二、日期和时间类型</h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/time.png" alt="" /></p>
+
+<p><strong>注意事项:</strong><br>
+<strong>1.经常插入或者跟新日期为当前系统时间通常用TIMESTAMP来表示</strong><br>
+&emsp;但是MySQL规定TIMESTAMP类型字段只能有一列的默认值为current_timestamp,第二个TIMESTAMP字段的默认值为0，即0000-00-00 00：00：00；时间与时区相关<br></p>
+
+<p><strong>2. DATETIME是DATE和TIME的结合</strong></p>
+
+<pre><code>mysql&gt; create table t(d date,t time,dt datetime);
+Query OK, 0 rows affected (0.11 sec)
+mysql&gt; desc t;
++-------+----------+------+-----+---------+-------+
+| Field | Type | Null | Key | Default | Extra |
++-------+----------+------+-----+---------+-------+
+| d | date | YES | | NULL | |
+| t | time | YES | | NULL | |
+| dt | datetime | YES | | NULL | |
++-------+----------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+mysql&gt; select now();
++---------------------+
+| now() |
++---------------------+
+| 2014-04-08 11:38:24 |
++---------------------+
+1 row in set (0.01 sec)
+mysql&gt; insert into t values(now(),now(),now());
+Query OK, 1 row affected, 1 warning (0.00 sec)
+mysql&gt; show warnings;
++-------+------+----------------------------------------+
+| Level | Code | Message |
++-------+------+----------------------------------------+
+| Note | 1265 | Data truncated for column 'd' at row 1 |
++-------+------+----------------------------------------+
+1 row in set (0.00 sec)
+mysql&gt; select * from t;
++------------+----------+---------------------+
+| d | t | dt |
++------------+----------+---------------------+
+| 2014-04-08 | 11:38:40 | 2014-04-08 11:38:40 |
++------------+----------+---------------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>3.TIMESTAMP 和DATETIME的区别</strong><br>
+&emsp;A.TIMESTAMP支持的范围较小<br>
+&emsp;B.表中第一个TIMESTAMP列自动设置为系统时间；如果列中插入NULL或者不明确的赋值都会自动设置该列的值为当前的日期和时间；超过TIMESTAMP的取值范围时，直接由0000-00-00 00：00：00填补<br>
+&emsp;C.TIMESTAMP的插入和查询都受当地时区的影响，更能反应实际日期；DATETIME则只能反映出插入时当地的失去，其他时区的人查看数据必然会有误差<br></p>
+
+<p><strong>4.YEAR</strong><br>
+&emsp;有4位格式（允许的值是1901~2155、0000，默认值）的年，有2位格式（允许的值70-69，即1970~2069,Mysql5.5.27以后版本不再支持）的年</p>
+
+<h5>三、字符串类型</h5>
+
+<p><img src="http://geekwolf.github.io/images/mysql/char.png" alt="" /></p>
+
+<p><strong>注意事项：</strong><br>
+<strong>1.varchar和char的不同之处在于存储方式不同</strong><br>
+&emsp;A. char列的长度固定为创建表时声明的长度，长度可以为0~255；varchar列中的值为可变长字符串，长度可以为0~65535</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/charst.png" alt="" /></p>
+
+<p>&emsp;B.查询时char列删除了尾部的空格，而varchar则保留了这些空格<br>
+&emsp;例如：</p>
+
+<pre><code>mysql&gt; CREATE TABLE vc (v VARCHAR(4), c CHAR(4));
+Query OK, 0 rows affected (0.10 sec)
+mysql&gt; INSERT INTO vc VALUES ('ab ', 'ab ');
+Query OK, 1 row affected (0.00 sec)
+mysql&gt; SELECT CONCAT('(', v, ')'), CONCAT('(', c, ')') FROM vc;
++---------------------+---------------------+
+| CONCAT('(', v, ')') | CONCAT('(', c, ')') |
++---------------------+---------------------+
+| (ab ) | (ab) |
++---------------------+---------------------+
+1 row in set (0.00 sec)
+mysql&gt; select length(v),length(c) from vc;
++-----------+-----------+
+| length(v) | length(c) |
++-----------+-----------+
+| 4 | 2 |
++-----------+-----------+
+1 row in set (0.00 sec)
+mysql&gt; select concat(v,'+'),concat(c,'+') from vc;
++---------------+---------------+
+| concat(v,'+') | concat(c,'+') |
++---------------+---------------+
+| ab + | ab+ |
++---------------+---------------+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><strong>2.BINARY和VARBINARY类型：</strong>类似CHAR和VARCHAR类型，不同的是它们包含二进制字符串而不包含非二进制字符串；CHAR(M)、VARCHAR(M)中的M表示字符长度，BINARY(M)和VARBINARY(M)中M表示字节的长度</p>
+
+<p><strong>3.ENUM类型(枚举类型)</strong><br>
+&emsp;对于1~255个成员的枚举需要1个字节存储，对于255~65535个成员，需要2个字节存储，最多允许65535个成员<br>
+&emsp;例如:</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/enum.png" alt="" /></p>
+
+<p>&emsp;ENUM类型是忽略大小写的，在存储&#8221;M&#8221; &ldquo;f&#8221;时将它们都转换成大写，插入不存在的ENUM指定的范围内的值时，并没有警告，而是插入了enum(&rsquo;M&#8217;,&lsquo;F&rsquo;)的第一个值“M”，只允许从集合中选取单个值，不能一次取多个</p>
+
+<p><strong>4.SET类型</strong><br>
+&emsp;SET是一个字符串对象，包含0~64个成员，与ENUM的区别在于可以一次选取多个成员<br>
+&emsp;1~8成员的集合，占1个字节<br>
+&emsp;9~16成员的集合，占2个字节<br>
+&emsp;17~24成员的集合，占用3个字节<br>
+&emsp;25~32成员的集合，占用4个字节<br>
+&emsp;33~64成员的集合，占用8个字节<br>
+&emsp;例如：</p>
+
+<pre><code>mysql&gt; create table t (col set('a','b','c','d'));
+Query OK, 0 rows affected (0.22 sec)
+mysql&gt; desc t;
++-------+----------------------+------+-----+---------+-------+
+| Field | Type | Null | Key | Default | Extra |
++-------+----------------------+------+-----+---------+-------+
+| col | set('a','b','c','d') | YES | | NULL | |
++-------+----------------------+------+-----+---------+-------+
+1 row in set (0.00 sec)
+mysql&gt; insert into t values('a,b'),('a,d,a'),('a,b'),('a,c'),('a');
+Query OK, 5 rows affected (0.00 sec)
+Records: 5 Duplicates: 0 Warnings: 0
+mysql&gt; select * from t;
++------+
+| col |
++------+
+| a,b |
+| a,d |
+| a,b |
+| a,c |
+| a |
++------+
+5 rows in set (0.00 sec)
+</code></pre>
+
+<p>对于(&lsquo;a,d,a&rsquo;)这样包含重复成员的集合将取一次，写入后的结果为“a,d”</p>
+
+<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.5/en/data-types.html">http://dev.mysql.com/doc/refman/5.5/en/data-types.html</a></p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Sql基础操作总结]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie/"/>
+    <updated>2014-04-04T10:29:01+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie</id>
+    <content type="html"><![CDATA[<p>本文主要根据自己的学习过程总结的文章，可能并不全面，牛人请绕过~<br>
+show create table user \G;      查看创建user表的sql<br>
+<strong>修改表结构：</strong></p>
+
+<pre><code>alter  table tablename modify[culumn] column_definition [first|after col_name]
+例子：
+修改emp的字段数据类型
+alter table  emp modify ename varchar(20);
+表首增加字段
+alter table emp add column id int(10) first;
+删除字段
+alter table emp drop [column]  id;
+字段改名 
+alter table tablename change [column] old_name column_definition [first/after col_name]
+更改表名
+alter table emp rename [to] test;
+</code></pre>
+
+<p><strong>注释：</strong> modify只能修改字段数据类型，不能修改字段名称，first/after 表示修改字段的顺序</p>
+
+<!--more-->
+
+
+<p><strong>插入操作:</strong></p>
+
+<pre><code>insert into table emp(f1,f2,f3) values(v1,v2,v3);
+insert into table  emp values(v1,v2,v3);
+一次插入多条记录
+insert into table emp(f1,f2,f3)
+values
+(r1_v1,r2_v1,r3_v1),
+(r1_v2,r2_v2,r3_v3);
+</code></pre>
+
+<p><strong>查询：</strong><br>
+1.查询不重复记录 distinct</p>
+
+<pre><code>select distinct deptno from emp;
+</code></pre>
+
+<p>2.条件查询 where<br/>
+where字段比较 >、&lt;、>=、&lt;=、!= 等，多条件用or、and等
+3.排序和限制 order by
+排序关键字（默认是升序排列）：<br>
+&emsp;&emsp;DESC 表示按照字段进行降序排列<br>
+&emsp;&emsp;ASC   表所升序排列<br>
+&emsp;&emsp;limit  n显示前N条记录
+4.聚合操作</p>
+
+<pre><code>语法： select [fidled1,field2,...,fieldn] fun_name
+from  tablename
+[where where_contition]
+[group by  field1,field2,...fieldn]
+[with rollup]
+[having where_contition]
+
+fun_name :表示做聚合操作的函数，比如：sum、count（*）、max、min
+group by  :表示要进行分类聚合的字段
+with follup ：可选，表示是否对分类聚合后的结果进行在汇总
+having  ：表示在对分类后的结果在进行条件的过滤
+</code></pre>
+
+<p><strong>having和where的区别</strong><br>
+&emsp;&emsp;having是对聚合后的结果进行条件的过滤，而where是在聚合前就对记录进行过滤，如果逻辑允许，我们尽可能用where先过滤记录，这样因为结果集减小，将对聚合的效率大大提高，最后在根据逻辑看是否用having进行再过滤</p>
+
+<pre><code>例如：
+ 统计各个部门的人数：
+ select deptno,count(1) from emp group by deptno;
+ 统计各个部门的人数，又要统计总人数:
+ select deptno,count(1) from emp group by deptno with rollup;
+ 统计人数大于1的部门：
+ select deptno,count(1) from emp group by deptno having count(1)&gt;1;
+ 统计公司所有员工的薪水总额、最高和最低薪水
+ select sum(sal),max(sal),min(sal) from emp;
+</code></pre>
+
+<p>5.表连接<br>
+&emsp;&emsp;表连接分为：内连接和外连接；内连接：仅选出两张表中互相匹配的记录；外连接：选出其他不匹配的记录</p>
+
+<pre><code>例如：
+ 查询雇员的名字和所在部门名称（雇员和部门分属于两个表）
+ select ename,deptname from emp,dept where emp.deptno=dept.deptno;
+   外连接分为： 
+   左连接：包含所有的左边表中的记录甚至是右边表中没有和它匹配的记录
+   右连接：包含所有的右边表中的记录甚至是左边表中没有和它匹配的记录
+
+例如：查询emp中所有用户和所在部门名称
+select ename,deptname from dept right join emp on dept.deptno=emp.deptno;
+或可用左连接代替
+select ename,deptname from emp left join dept on emp.deptno=dept.deptno;
+</code></pre>
+
+<blockquote><p>表连接的好文章：
+<a href="http://coolshell.cn/articles/3463.html">http://coolshell.cn/articles/3463.html</a><br>
+MySQL的联结（Join）语法：
+<a href="http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html">http://www.blogjava.net/chenpengyi/archive/2005/10/17/15747.html</a><br>
+6.子查询
+用于子查询的关键字包括in、not in、=、!=、exits、not exits等</p></blockquote>
+
+<pre><code>例如：
+从emp表中查询出所有部门在dept表中的所有记录
+select * from emp where deptno in(select deptno from dept);
+可以使用表连接替换：
+select emp.*  from emp,dept where emp.deptno=dept.deptno;
+
+查询记录数唯一，可用=代替in
+select * from emp where deptno = (select deptno from dept limit 1);
+</code></pre>
+
+<p>6.记录联合（union、union all）
+场景：将两个表的数据按照一定的查询条件查询出来后，在合并显示
+union和union all的区别在于union all把结果集直接合并在一起，而union是将union all后的结果进行了去重DISTINCT后的结果
+<img src="http://geekwolf.github.io/images/mysql/unionall.png" alt="" /><br>
+<strong>查看帮助：</strong></p>
+
+<pre><code>显示可供查询的分类
+mysql&gt;? contents
+
+针对某个分类查看帮助
+mysql&gt;? data types
+
+查看int数据类型介绍
+mysql&gt;? int
+
+查看关键字的语法
+mysql&gt;? show
+mysql&gt;? create table
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Mysql事件调度器(Event Scheduler)]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/03/20/mysqlshi-jian-diao-du-qi-event-scheduler/"/>
+    <updated>2014-03-20T18:15:54+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/03/20/mysqlshi-jian-diao-du-qi-event-scheduler</id>
+    <content type="html"><![CDATA[<h5>目录:</h5>
+
+<p><a href="#t1">一、查看当前是否开启了event scheduler三种方法:</a><br>
+<a href="#t2">二、启动关闭event scheduler方法</a><br>
+<a href="#t3">三、创建Event</a><br>
+<a href="#t4">四、修改Event</a><br>
+<a href="#t5">五、查询Event信息</a><br></p>
+
+<p>&emsp;&emsp;Mysql中的事件调度器Event Scheduler类似于linux下的crontab计划任务的功能,它是由一个特殊的时间调度线程执行的</p>
+
+<h5><span id="t1">一、查看当前是否开启了event scheduler三种方法</span>:</h5>
+
+<p>1)     SHOW VARIABLES LIKE &lsquo;event_scheduler&rsquo;;<br>
+2)     SELECT @@event_scheduler;<br>
+3)     SHOW PROCESSLIST;(是否有State为：Waiting for next activation的进程，User为event_scheduler)<br></p>
+
+<h5><span id="t2">二、启动关闭event scheduler方法</span>:</h5>
+
+<p> 时间调度器是否开启由全局变量event_scheduler决定，它有三个可以设定的值：
+&ndash;  OFF  : 事件调度器是关闭的，调度线程并没有运行，并且在SHOW PROCESSLIST中不显示，默认值是OFF
+&ndash;  ON ：事件调度器是开启的，调度线程并没有运行，并且执行所有的调度事件，通过SHOW PROCESSLIST可以查看Waiting for next activation的进程
+&ndash;  DISABLED : 设定这个值表示Event Scheduler是被禁止的，无法在Mysql运行状态下改变其值<br></p>
+
+<!--more-->
+
+
+<p>
+ <strong>注：</strong>在Mysql启动时如果在my.cnf设置了event_scheduler=ON（OFF or 1 or 0）时，就不能在运行时修改撑DISABLED，如果设置event_scheduler=DISABLED时，就不能在运行时修改其值为ON （ OFF or 1 or 0）<br></p>
+
+<pre><code>mysql&gt; SELECT @@event_scheduler;
++-------------------+
+| @@event_scheduler |
++-------------------+
+| DISABLED |
++-------------------+
+1 row in set (0.00 sec)
+mysql&gt; SET @@global.event_scheduler = 1; 
+ERROR 1290 (HY000): The MySQL server is running with the --event-scheduler=DISABLED or --skip-grant-tables option so it cannot execute this statement
+
+
+在mysql运行时开启Event（4种方法均可）：
+SET GLOBAL event_scheduler = ON;
+SET @@global.event_scheduler = ON;
+SET GLOBAL event_scheduler = 1;
+SET @@global.event_scheduler = 1;
+
+在mysql运行时关闭Event（4种方法均可）：
+SET GLOBAL event_scheduler = OFF;
+SET @@global.event_scheduler = OFF;
+SET GLOBAL event_scheduler = 0;
+SET @@global.event_scheduler = 0;
+</code></pre>
+
+<h5><span id="t3">三、创建Event</span>:</h5>
+
+<pre><code>语法：
+CREATE
+    [DEFINER = { user | CURRENT_USER }]
+    EVENT
+    [IF NOT EXISTS]
+    event_name
+    ON SCHEDULE schedule
+    [ON COMPLETION [NOT] PRESERVE]
+    [ENABLE | DISABLE | DISABLE ON SLAVE]
+    [COMMENT 'comment']
+    DO event_body;
+
+schedule:
+    AT timestamp [+ INTERVAL interval] ...
+  | EVERY interval
+    [STARTS timestamp [+ INTERVAL interval] ...]
+    [ENDS timestamp [+ INTERVAL interval] ...]
+interval:
+    quantity {YEAR | QUARTER | MONTH | DAY | HOUR | MINUTE |
+             WEEK | SECOND | YEAR_MONTH | DAY_HOUR | DAY_MINUTE |
+             DAY_SECOND | HOUR_MINUTE | HOUR_SECOND | MINUTE_SECOND}
+</code></pre>
+
+<p><strong>说明：</strong></p>
+
+<p>&emsp;&emsp;DEFINER默认是CREATE EVENT的用户,可以理解为DEFINER=CURRENT_USER,指该event的用户，服务器在执行该事件时，使用该用户来检查权限；如果设置语法:&lsquo;user_name&rsquo;@&lsquo;host_name&#8217;，如果当前CREATE EVENT用户没有supser权限，则无法将该event指派给其他用户；如果有super权限，则可以指定任意存在的用户，若不存在，时间执行时报错<br>
+&emsp;&emsp;IF NOT EXISTS ： 如果在同一个schema创建一个已经存在的event_name时不会做任何操作，也不会出错，但会出现warings：该event已经存在；如果不增加此关键词已经存在的话提示ERROR： 1537 (HY000): Event &#8216;countsum&rsquo; already exists<br>
+&emsp;&emsp;ON SCHEDULE ：用于设置什么时间执行，执行的频率及执行多久的问题<br>
+&emsp;&emsp;AT timestamp ：表示在给定的datetime或者timestamp的时间执行一次<br>
+&emsp;&emsp;+ INTERVAL interval：表示从AT timestamp多久之后执行<br>
+&emsp;&emsp;EVERY interval ：有规律的重复执行<br>
+&emsp;&emsp;[ENABLE | DISABLE]可是设置该事件创建后状态是否开启或关闭，默认为ENABLE<br>
+&emsp;&emsp;[COMMENT &lsquo;comment&rsquo;]可以给该事件加上注释。</p>
+
+<pre><code>event创建时间的3周2天后：
+AT  CURRENT_TIMESTAMP + INTERVAL 3 WEEK + INTERVAL 2 DAY
+
+2分钟10秒： 
++ INTERVAL '2:10' MINUTE_SECOND
+
+每6周：
+EVERY 6 WEEK
+
+从现在开始30分钟后每12小时执行一次到从现在到4周后结束执行：
+EVERY 12 HOUR STARTS CURRENT_TIMESTAMP + INTERVAL 30 MINUTE ENDS CURRENT_TIMESTAMP + INTERVAL 4 WEEK 
+</code></pre>
+
+<p><strong>实例：</strong><br>
+前提：创建EVENT的用户需要只少对应schema的EVENT权限<br>
+最基本的create event只需要三个部分：<br>
+1. create event关键字以及一个event名称<br>
+2. on schedule子句<br>
+3. do子句<br></p>
+
+<pre><code>1. 在创建事件myevent1小时后执行，执行一条更新
+
+CREATE EVENT myevent
+    ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 HOUR
+DO
+  UPDATE myschema.mytable SET mycol = mycol + 1;
+
+2.2014年3月20日12点整清空test表：
+
+CREATE EVENT e_test
+    ON SCHEDULE AT TIMESTAMP '2014-03-20 12:00:00'
+    DO TRUNCATE TABLE test.aaa;
+
+3.5天后开启每天定时清空test表：
+
+CREATE EVENT e_test
+    ON SCHEDULE EVERY 1 DAY
+    STARTS CURRENT_TIMESTAMP + INTERVAL 5 DAY
+    DO TRUNCATE TABLE test.aaa;
+
+4.每天定时清空test表，5天后停止执行
+
+CREATE EVENT e_test
+    ON SCHEDULE EVERY 1 DAY
+    ENDS CURRENT_TIMESTAMP + INTERVAL 5 DAY
+    DO TRUNCATE TABLE test.aaa;
+
+5.5天后开启每天定时清空test表，一个月后停止执行：
+
+CREATE EVENT e_test
+    ON SCHEDULE EVERY 1 DAY
+    STARTS CURRENT_TIMESTAMP + INTERVAL 5 DAY
+    ENDS CURRENT_TIMESTAMP + INTERVAL 1 MONTH
+    DO TRUNCATE TABLE test.aaa;
+
+6.每天定时清空test表(只执行一次，任务完成后就终止该事件)：
+
+CREATE EVENT e_test
+    ON SCHEDULE EVERY 1 DAY
+    ON COMPLETION NOT PRESERVE
+    DO TRUNCATE TABLE test.aaa;
+
+[ON COMPLETION [NOT] PRESERVE]可以设置这个事件是执行一次还是持久执行，默认为NOT PRESERVE。
+</code></pre>
+
+<h5><span id="t4">四、修改Event</span>:</h5>
+
+<pre><code>ALTER
+   [DEFINER = { user | CURRENT_USER }]
+   EVENT event_name
+   [ON SCHEDULE schedule]
+   [ON COMPLETION [NOT] PRESERVE]
+   [RENAME TO new_event_name]
+   [ENABLE | DISABLE | DISABLE ON SLAVE]
+   [COMMENT 'comment']
+   [DO event_body]
+</code></pre>
+
+<p><strong>说明：</strong><br>
+&emsp;&emsp;对于任何一个拥有定义在database里面事件的event权限的用户都可以修改event，并且成功需改后，那个用户就会成为此event的definer<br></p>
+
+<pre><code>实例：
+CREATE EVENT myevent
+    ON SCHEDULE
+      EVERY 6 HOUR
+    COMMENT 'A sample comment.'
+    DO
+      UPDATE myschema.mytable SET mycol = mycol + 1;
+
+将上面的event从开始之后每6个小时执行一次改为从开始4个小时后每12小时执行一次
+
+只修改schedule
+ALTER EVENT myevent
+    ON SCHEDULE
+      EVERY 12 HOUR
+    STARTS CURRENT_TIMESTAMP + INTERVAL 4 HOUR;
+同时修改schedule和body
+ALTER EVENT myevent
+    ON SCHEDULE
+      AT CURRENT_TIMESTAMP + INTERVAL 1 DAY
+    DO
+      TRUNCATE TABLE myschema.mytable;
+</code></pre>
+
+<p>关闭、启动、别名、移动、删除event：</p>
+
+<pre><code>临时关闭某个event
+ALTER EVENT myevent DISABLE;
+
+开启某个event
+ALTER EVENT myevent ENABLE;
+
+别名某个event
+ALTER EVENT olddb.myevent
+RENAME TO newdb.myevent;
+
+将myevent从olddb库移动到newdb库
+ALTER EVENT olddb.myevent
+RENAME TO newdb.myevent;
+
+删除event
+DROP EVENT [IF EXISTS] event_name
+</code></pre>
+
+<h5><span id="t5">五、查询Event信息</span>:</h5>
+
+<p>Event信息相关表：<br>
+information_schema.events<br>
+mysql.event</p>
+
+<p>查看事件的创建信息<br>
+show create event countsum \G</p>
+
+<p>查看sem库的events信息<br>
+USE sem；<br>
+SHOW EVENTS \G</p>
+
+<p>SHOW EVENTS FROM sem;</p>
+
+<h5>参考资料:<br></h5>
+
+<blockquote><p><a href="https://dev.mysql.com/doc/refman/5.5/en/events.html">https://dev.mysql.com/doc/refman/5.5/en/events.html</a></p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Innodb索引原理和B+树]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/03/17/innodbsuo-yin-yuan-li-he-b-plus-shu/"/>
+    <updated>2014-03-17T14:45:35+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/03/17/innodbsuo-yin-yuan-li-he-b-plus-shu</id>
+    <content type="html"><![CDATA[<h5>目录<br></h5>
+
+<p><a href="#t1">一、innodb存储引擎索引概述</a><br>
+<a href="#t2">二、理解B+树算法</a><br>
+&emsp;&emsp;&emsp;<a href="#t3">(1) B+树的插入操作</a><br>
+&emsp;&emsp;&emsp;<a href="#t4">(2) B+树的删除操作</a><br>
+<a href="#t5">三、B+树索引介绍</a><br>
+&emsp;&emsp;&emsp;<a href="#t6">(1) 聚集索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t7">(2) 辅助索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t8">(3) B+树索引的管理</a><br>
+<a href="#t9">四、B+树索引的使用</a><br>
+&emsp;&emsp;&emsp;<a href="#t10">(1) 什么时候使用B+索引</a><br>
+&emsp;&emsp;&emsp;<a href="#t11">(2) 顺序读、随机读与预读取</a><br>
+&emsp;&emsp;&emsp;<a href="#t12">(3) 辅助索引的优化</a><br>
+&emsp;&emsp;&emsp;<a href="#t13">(4) 联合索引</a><br></p>
+
+<h5><span id="t1">一、innodb存储引擎索引概述</span>：<br></h5>
+
+<p>innodb存储引擎支持两种常见的索引：B+树索引和哈希索引。<br>
+innodb支持哈希索引是自适应的，innodb会根据表的使用情况自动生成哈希索引。<br>
+B+树索引就是传统意义上的索引，是关系型数据库中最常用最有效的索引。B+树是从最早的平衡二叉树演变而来，但是B+树不是一个二叉树。B+中的B不代表二叉(Binary),而是代表平衡(Balance)。<br></p>
+
+<p><strong>注意</strong>：B+树索引并不能找到一个键值对应的具体行。b+树索引只能查到被查找数据行所在的页，然后数据库通过把页读入内存，再在内存中查找，最后得到结果。</p>
+
+<h5><span id="t2">二、理解B+树算法</span></h5>
+
+<p>B+树是为磁盘及其他存储辅助设备而设计一种平衡查找树（不是二叉树）。B+树中，所有记录的节点按大小顺序存放在同一层的叶节点中，各叶节点用指针进行连接。<br>
+下面演示一个B+数结构，高度为2，每页可放4条记录，扇出(fan out)为5。从下图1可以看出，所有记录都在页节点中，并且为顺序存放，我们从最左边的叶节点开始遍历，可以得到所有键值的顺序排序：5、10、15、20、25、30、50、55、60、65、75、80、85、90.
+<img src="http://geekwolf.github.io/images/mysql/1.png" alt="" /></p>
+
+<p><span id="t3">（1） B+树的插入操作</span>
+B+树的插入必须保证插入后叶节点的记录依然排序。同时要考虑插入B+树的三种情况，每种情况都可能导致不同的插入算法。如下表所示：<br>
+(<img src="http://geekwolf.github.io/images/mysql/2.png" alt="" /></p>
+
+<!--more-->
+
+
+<p>我们实例分析B+树的插入，在图1的B+树中，我们需要插入28这个值。因为Leaf Page和Index page都没有满，我们直接将记录插入叶节点就可以了。如下图2所示：</p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/3.png" alt="" /><br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图2  插入键值28<br>
+下面我们再插入70这个值，这时Leaf Page已经满了，但是Index Page还没有满，符合上面的第二种情况。这时插入Leaf Page的情况为
+50、55、60、65、70.我们根据中间的值60拆分叶节点，可得到下图3所示（双项链表指针依然存在，没有画出）
+<img src="http://geekwolf.github.io/images/mysql/4.png" alt="" /><br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图3  插入键值70<br>
+最后我们再插入95，这个Leaf Page和Index Page都满了，符合上面第三种情况。需要做2次拆分，如下图4所示：<br>
+<img src="http://geekwolf.github.io/images/mysql/5.png" alt="" /><br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图4  插入键值95<br>
+可以看到，不管怎么变化，B+树总会保持平衡。但是为了保持平衡，对于新插入的键值可能需要做大量的拆分页操作。B+树主要用于磁盘，拆分意味着磁盘的操作，应该在可能的情况下尽量减少页的拆分。因此，B+树提供了旋转功能。旋转发生在Leaf Page已经满了，但是左右兄弟节点没有满的情况下。这时B+树并不是急着做页的拆分，而是旋转。旋转结果如图5所示，可以看到旋转操作使B+树减少了一次页的拆分操作，高度仍然为2.<br>
+<img src="http://geekwolf.github.io/images/mysql/6.png" alt="" />
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图5 B+树的旋转操作</p>
+
+<p><span id="t4">(2) B+树的删除操作</span>
+B+树使用填充因子来控制数的删除变化。填充因子可以设置的最小值为50%。B+树的删除操作同样保证删除后叶节点的记录依然排序。
+根据填充因子的变化，B+树删除依然需要考虑三种情况，如下表所示：<br>
+<img src="http://geekwolf.github.io/images/mysql/7.png" alt="" /></p>
+
+<p>根据图4的B+树，我们进行删除操作，首先删除键值为70的这条记录，该记录符合上表第一种情况，删除后如下图6所示：
+<img src="http://geekwolf.github.io/images/mysql/8.png" alt="" />
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图6 删除键值70</p>
+
+<p>接着我们删除键值为25的记录，这也是属于上表第一种情况，不同的是该值还是index page中的值。因此在删除Leaf Page中的25后，还需要将25的右兄弟节点28更新到Index Page中，如下图7所示（图中有两个笔误，红色为修正值）：<br>
+<img src="http://geekwolf.github.io/images/mysql/9.png" alt="" />
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图7  删除键值28<br>
+最后我们删除键值为60的记录。删除Leaf page键值为60的记录后，其填充因子小于50%。需要做合并操作。同样在删除Index page中相关记录后需要做Index Page的合并操作。</p>
+
+<h5><span id="t5">三、B+树索引介绍</span></h5>
+
+<p>B+树索引的本质是B+树在数据库中的实现。但是B+树索引有一个特点是高扇出性，因此在数据库中，B+树的高度一般在2到3层。也就是说查找某一键值的记录，最多只需要2到3次IO开销。按磁盘每秒100次IO来计算，查询时间只需0.0.2到0.03秒。<br>
+数据库中B+树索引分为聚集索引（clustered index）和非聚集索引（secondary index）.这两种索引的共同点是内部都是B+树，高度都是平衡的，叶节点存放着所有数据。不同点是叶节点是否存放着一整行数据。</p>
+
+<p><span id="t6">(1) 聚集索引</span><br>
+Innodb存储引擎表是索引组织表，即表中数据按主键顺序存放。而聚集索引就是按每张表的主键构造一颗B+树。并且叶节点存放整张表的行记录数据。每张表只能有一个聚集索引（一个主键）。<br>
+聚集索引的另一个好处是它对于主键的排序查找和范围的速度非常快。叶节点的数据就是我们要找的数据。</p>
+
+<pre><code>主键排序查找：例如我们要找出最新的10条团购订单，由于B+树是双项链表，我们可以迅速找到最后一个页，并取出10条记录，我们用Explain进行分析：
+12:41:32 tuangou&gt; explain select * from groupon_so order by id desc limit 10\G
+id: 1
+select_type: SIMPLE
+    table: groupon_so
+     type: index
+     possible_keys: NULL
+      key: PRIMARY
+  key_len: 8
+      ref: NULL
+     rows: 10
+    Extra: 
+
+1 row in set (0.00 sec)
+
+主键范围查找：如果要通过主键查找某一范围内的数据，通过叶节点的上层中间节点就能得到页的范围，之后直接读取数据页即可：
+12:50:19 tuangou&gt; explain select * from groupon_so where id&gt;10000000 and id&lt;12000000\G
+       id: 1
+select_type: SIMPLE
+    table: groupon_so
+     type: range
+     possible_keys: PRIMARY
+      key: PRIMARY
+  key_len: 8
+      ref: NULL
+     rows: 4301486
+    Extra: Using where
+1 row in set (0.00 sec)
+</code></pre>
+
+<p><span id="t7">(2) 辅助索引</span><br>
+辅助索引（也称非聚集索引）。叶级别不包含行的全部数据，叶级别除了包含行的键值以外，每个索引行还包含了一个书签（bookmark），该书签告诉innodb存储引擎，哪里可以找到与索引对应的数据。<br>
+辅助索引的存在并不影响数据再聚集索引中的组织，因此一个表可以有多个辅助索引。当通过辅助索引查找数据时，innodb会遍历辅助索引并通过叶级别的指针获得指向主键索引的主键。然后再通过主键索引找到一行完整的数据。</p>
+
+<p><span id="t8">(3) B+树索引的管理</span><br>
+索引的创建和删除可以用两种方式。一种是alter table,另一种是create/drop index</p>
+
+<pre><code>alter table 创建和删除索引的语法为：
+ALTER [ONLINE | OFFLINE] [IGNORE] TABLE tbl_name
+| ADD {INDEX|KEY} [index_name]
+    [index_type] (index_col_name,…) [index_option] …
+
+ALTER [ONLINE | OFFLINE] [IGNORE] TABLE tbl_name
+| DROP PRIMARY KEY
+| DROP {INDEX|KEY} index_name
+
+create/drop index的语法为：
+CREATE [ONLINE|OFFLINE] [UNIQUE|FULLTEXT|SPATIAL] INDEX index_name
+[index_type]
+ON tbl_name (index_col_name,…)
+
+DROP [ONLINE|OFFLINE] INDEX index_name ON tbl_name
+</code></pre>
+
+<p>MySQL索引注意的问题：对于MySQL索引的添加和删除操作，MySQL先是创建一张加好索引的临时表，然后把数据导入临时表，再删除原表，把临时表重命名为原表。<br>
+Innodb存储引擎从Innodb Plugin版本开始，支持一种快速创建索引的方法（只限于辅助索引，主键索引仍需要建临时表）。首先对表加S锁，在创建的过程中不需要重建表，但是由于上了S锁，在创建索引的过程中只能进行查询操作，不能更新数据。<br></p>
+
+<h5><span id="t9">四、B+树索引的使用</span></h5>
+
+<p><span id="t10">(1).什么时候使用B+索引</span><br>
+当查询表中很少一部分数据时，B+索引才有意义。对于性别，地区类型字段，他们取值范围很小，即低选择性。这时加B+索引是没有必要的。相反，某个字段取值范围很广，如姓名，几乎没有重复，即高选择性，则使用B+索引是比较合适的。因此。当访问高选择性字段并取出很少一部分数据时，该字段加B+索引是非常有效的。但是当取出的数据行占表中大部分数据时，数据库就不会使用B+索引了。<br></p>
+
+<p>举例说明下，看下面这个团购订单表groupon_so的部分索引：<br></p>
+
+<pre><code>    14:08:34 tuangou&gt; show index from groupon_so\G
+*************************** 1. row ***************************
+Table: groupon_so
+Non_unique: 0
+ Key_name: PRIMARY
+ Seq_in_index: 1
+ Column_name: id
+ Collation: A
+ Cardinality: 10088342
+ Sub_part: NULL
+   Packed: NULL
+     Null: 
+Index_type: BTREE
+  Comment: 
+Index_comment: 
+*************************** 2. row ***************************
+Table: groupon_so
+Non_unique: 1
+Key_name: idx_groupon_so_order_id
+Seq_in_index: 1
+Column_name: order_id
+Collation: A
+Cardinality: 10088342
+Sub_part: NULL
+   Packed: NULL
+     Null: 
+Index_type: BTREE
+  Comment: 
+Index_comment: 
+*************************** 3. row ***************************
+Table: groupon_so
+Non_unique: 1
+ Key_name: idx_groupon_so_order_code
+ Seq_in_index: 1
+ Column_name: order_code
+ Collation: A
+ Cardinality: 10088342
+ Sub_part: NULL
+   Packed: NULL
+   Null: 
+Index_type: BTREE
+   Comment: 
+Index_comment: 
+*************************** 4. row ***************************
+    Table: groupon_so
+    Non_unique: 1
+ Key_name: idx_groupon_so_end_user_id
+ Seq_in_index: 1
+ Column_name: end_user_id
+ Collation: A
+ Cardinality: 10088342
+ Sub_part: NULL
+   Packed: NULL
+   Null: YES
+Index_type: BTREE
+   Comment: 
+Index_comment: 
+*************************** 5. row ***************************
+Table: groupon_so
+Non_unique: 1
+Key_name: idx_groupon_so_groupon_id
+Seq_in_index: 1
+Column_name: groupon_id
+Collation: A
+Cardinality: 148357
+Sub_part: NULL
+Packed: NULL
+  Null: 
+Index_type: BTREE
+   Comment: 
+Index_comment:
+
+
+其中有一个索引 idx_groupon_so_order_id,这个索引里面字段订单号的值都是不重复的，是高选择性的字段。
+我们查找order_id为 99165590 的这条记录，执行计划如下：
+
+14:31:50 tuangou&gt; explain select * from groupon_so where order_id=99165590\G
+*************************** 1. row ***************************
+       id: 1
+    select_type: SIMPLE
+    table: groupon_so
+     type: ref
+possible_keys: idx_groupon_so_order_id
+      key: idx_groupon_so_order_id
+  key_len: 8
+      ref: const
+     rows: 1
+    Extra: 
+1 row in set (0.00 sec)
+可以看到使用了idx_groupon_so_order_id这个索引，符合高选择性，取少部分数据这个特性。
+
+
+但是如果执行下面这条语句：
+14:32:33 tuangou&gt; explain select * from groupon_so where order_id&gt;99165590\G
+*************************** 1. row ***************************
+       id: 1
+    select_type: SIMPLE
+    table: groupon_so
+    type: ALL
+possible_keys: idx_groupon_so_order_id
+    key: NULL
+key_len: NULL
+    ref: NULL
+   rows: 10092839
+  Extra: Using where
+1 row in set (0.00 sec)
+
+可以看到possible_keys依然是idx_groupon_so_order_code，但是索引优化使用的索引keys显示的是NULL，因为虽然这个字段是高选择性的，但是我们取出了表中的大部分数据，索引没有用到索引。
+
+14:34:11 tuangou&gt; select @a:=count(id) from groupon_so where order_id&gt;99165590;
++—————+
+| @a:=count(id) |
++—————+
+|       8684424 |
++—————+
+1 row in set (2.48 sec)
+
+14:34:26 tuangou&gt; select @a:=count(id) from groupon_so;
++—————+
+| @a:=count(id) |
++—————+
+|       9858135 |
++—————+
+1 row in set (1.86 sec)
+
+14:37:25 tuangou&gt; select 8684424/9858135;
++—————–+
+| 8684424/9858135 |
++—————–+
+|          0.8809 |
++—————–+
+1 row in set (0.00 sec)
+可以看到我们取出了表中88%的数据，索引没有用到索引。
+</code></pre>
+
+<p><span id="t11">(2)顺序读、随机读与预读取</span><br>
+顺序读是指顺序的读取磁盘上的块，随机读是指访问的块是不连续的，需要磁盘的磁头不断移动。随机读的性能是远远低于顺序读的。<br>
+在数据库中，顺序读根据索引的叶节点就能顺序的读取所需的行数据，这个顺序读只是逻辑的顺序读，在磁盘上可能还是随机读。随机读是指访问辅助索引叶节点不能完全得到结果，需要根据辅助索引页节点中的主键去寻找实际数据行。对于一些取表里很大部分数据的查询，正式因为读取是随机读，而随机读的性能会远低于顺序读。所以优化器才会选择全部扫描顺序读，而不使用索引。<br>
+innodb存储引擎有两个预读取方法，随机预读取和线性预读取。随机预读取是指当一个区（共64个连续页）中有13个页在缓冲区中并被频繁访问时，innodb存储引擎会将这个区中剩余的页预读到缓冲区。线性预读取基于缓冲池中页的访问方式，而不是数量。如果一个区中有24个页被顺序访问了，则innodb会读取下一个区的所有页到缓冲区。但是innodb预读取经过测试后性能比较差，经过TPCC测试发现禁用预读取比启用预读取提高了10%的性能。在新版本innodb中，mysql禁用了随机预读取，仅保留了线性预读取，并且加入了innodb_read_ahead_threshold参数，当连续访问页超过该值时才启用预读取，默认值为56。</p>
+
+<pre><code>15:02:16 tuangou&gt; show variables like ‘innodb_read_ahead_threshold%’;
++—————————–+——-+
+| Variable_name               | Value |
++—————————–+——-+
+| innodb_read_ahead_threshold | 56    |
++—————————–+——-+
+1 row in set (0.00 sec)
+</code></pre>
+
+<p>3)<span id="t12">辅助索引的优化</span><br>
+通过前面可知，辅助索引的页节点包含主键，但是辅助索引的叶节点并不包含完整的行数据信息，因此，innodb存储引擎总是会从辅助索引的叶节点判断是否能得到数据。让我们看一个例子：<br></p>
+
+<pre><code>mysql&gt; create table t ( a int not null, b varchar(20), primary key(a),key(b));
+Query OK, 0 rows affected (0.18 sec)
+
+mysql&gt; insert into t select  1,’kangaroo’;
+Query OK, 1 row affected (0.00 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql&gt; insert into t select  2,’dolphin’;
+Query OK, 1 row affected (0.01 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql&gt; insert into t select  3,’dragon’;
+Query OK, 1 row affected (0.01 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql&gt; insert into t select  4,’anteloge’;
+Query OK, 1 row affected (0.01 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+如果执行select * from t很多人认为应该是如下结果：
+mysql&gt; select * from t order by a\G;
+*************************** 1. row ***************************
+a: 1
+b: kangaroo
+*************************** 2. row ***************************
+a: 2
+b: dolphin
+*************************** 3. row ***************************
+a: 3
+b: dragon
+*************************** 4. row ***************************
+a: 4
+b: anteloge
+
+4 rows in set (0.00 sec)
+
+但是实际执行结果确是：
+mysql&gt; select * from t\G;
+*************************** 1. row ***************************
+a: 4
+b: anteloge
+*************************** 2. row **************************
+a: 2
+b: dolphin
+*************************** 3. row ***************************
+a: 3
+b: dragon
+*************************** 4. row ***************************
+a: 1
+b: kangaroo
+4 rows in set (0.00 sec)
+
+因为辅助索引包含了主键a的值，因此访问b列上的辅助索引就可以得到a的值，这样就可以得到表中所有的数据。我们看这条语句的执行计划：
+mysql&gt; explain select * from t\G;
+*************************** 1. row ***************************
+id: 1
+select_type: SIMPLE
+table: t
+type: index
+possible_keys: NULL         
+      key: b
+  key_len: 23
+      ref: NULL
+     rows: 4
+    Extra: Using index
+1 row in set (0.00 sec)
+
+
+可以看到优化器最终走的索引b,如果想对a列进行排序，则需要进行order by操作：
+mysql&gt; explain select * from t order by a\G;
+*************************** 1. row ***************************
+id: 1
+select_type: SIMPLE
+    table: t
+     type: index
+possible_keys: NULL
+      key: PRIMARY
+  key_len: 4
+      ref: NULL
+     rows: 4
+    Extra: NULL
+1 row in set (0.00 sec)
+
+mysql&gt; select * from t order by a\G;
+*************************** 1. row ***************************
+a: 1
+b: kangaroo
+*************************** 2. row ***************************
+a: 2
+b: dolphin
+*************************** 3. row ***************************
+a: 3
+b: dragon
+*************************** 4. row ***************************
+a: 4
+b: anteloge
+
+或者使用主键强制得到结果：
+mysql&gt; select * from t force index(PRIMARY)\G;
+*************************** 1. row ***************************
+a: 1
+b: kangaroo
+*************************** 2. row ***************************
+a: 2
+b: dolphin
+*************************** 3. row ***************************
+a: 3
+b: dragon
+*************************** 4. row ***************************
+a: 4
+b: anteloge
+
+4 rows in set (0.00 sec)
+</code></pre>
+
+<p><span id="t13">(4)联合索引</span><br>
+联合索引是指对表上的多个列做索引，联合索引的创建方法和之前的一样，如下：</p>
+
+<pre><code>mysql&gt; alter table t add key idx_a_b(a,b);
+Query OK, 0 rows affected (0.17 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+</code></pre>
+
+<p>联合索引还是一个B+树，不同的是联合索引键值的数量不是1，而是大于等于2.<br>
+下面我们讨论一个两个整形列组成的联合索引，假定两个键值的名称分别为a和b，如下图8所示，每个节点上有两个键值，(1,1),(1,2),(2,1),(2,4),(3,1),(3,2), 数据按(a,b)顺序进行排列</p>
+
+<p><img src="http://www.ruzuojun.com/wp-content/uploads/2013/09/8.png" alt="" /></p>
+
+<p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;图8  多个键值的B+树<br></p>
+
+<p>因此，对于查询select * from t where a=xxx and b=xxx,显然可以使用(a,b)这个联合索引。对于单个a列查询 select * from t where a=xxx也是可以使用(a,b)这个索引。但是对于b列的查询select * from t where b=xxx是用不到这颗B+树索引。可以看到叶节点上b的值为1、2、1、4、1、2.显然不是排序的，因此b列的查询使用不到(a,b)索引。<br></p>
+
+<p>联合索引的第二个好处，可以对第二键值进行排序。例如很多情况下我们需要查询某个用户的购物情况，并按照时间排序，取出最近3次的购买记录，这时使用联合索引可以避免多一次的排序操作。因为索引本身在叶节点中已经排序了。看下面示例:<br></p>
+
+<pre><code>mysql&gt; create table buy_log(userid int unsigned not null, buy_date date);
+Query OK, 0 rows affected (0.09 sec)
+
+mysql&gt; insert into buy_log values(1,’2013-01-01′);
+Query OK, 1 row affected (0.01 sec)
+
+mysql&gt; insert into buy_log values(2,’2013-01-01′);
+Query OK, 1 row affected (0.01 sec)
+
+mysql&gt; insert into buy_log values(3,’2013-01-01′);
+Query OK, 1 row affected (0.01 sec)
+
+mysql&gt; insert into buy_log values(1,’2013-02-01′);
+Query OK, 1 row affected (0.01 sec)
+
+mysql&gt; insert into buy_log values(3,’2013-02-01′);
+Query OK, 1 row affected (0.00 sec)
+
+mysql&gt; insert into buy_log values(1,’2013-03-01′);
+Query OK, 1 row affected (0.01 sec)
+
+mysql&gt; insert into buy_log values(1,’2013-04-01′);
+Query OK, 1 row affected (0.01 sec)
+
+mysql&gt; alter table buy_log add key(userid);
+Query OK, 0 rows affected (0.07 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql&gt; alter table buy_log add key(userid,buy_date);
+Query OK, 0 rows affected (0.11 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+上面我们建立了测试表和数据，建立了2个索引来比较。两个索引都包含了userid字段。如果只对于userid查询，优化器的选择是：
+
+mysql&gt; explain select * from buy_log where userid=2\G;
+*************************** 1. row ***************************
+id: 1
+select_type: SIMPLE
+table: buy_log
+     type: ref
+possible_keys: userid,userid_2
+      key: userid
+  key_len: 4
+      ref: const
+     rows: 1
+    Extra: NULL
+1 row in set (0.00 sec)
+可以看到possible_keys里面两个索引都可以使用，分别是单个的userid索引和userid,buy_date的联合索引。但是优化器最终选择的是userid，因为该叶节点包含单个键值，因此一个页存放的记录应该更多。
+
+接下来看以下的查询，假定要取出userid=1最近的3次购买记录，分别使用单个索引和联合索引的区别：
+mysql&gt; explain select * from buy_log where userid=1 order by buy_date desc limit 3\G;
+*************************** 1. row ***************************
+id: 1
+select_type: SIMPLE
+    table: buy_log
+     type: ref
+possible_keys: userid,userid_2
+      key: userid_2
+  key_len: 4
+      ref: const
+     rows: 4
+    Extra: Using where; Using index
+1 row in set (0.00 sec)
+
+同样对于上述SQL，两个索引都可使用，但是查询优化器使用了userid和buy_date组成的联合索引userid_2.因为这个联合索引中buy_date已经排序好了，可以减少一次排序操作。
+
+如果我们强制使用user_id单个索引，可以看到如下情况：
+mysql&gt; explain select * from buy_log force index(userid) where userid=1 order by buy_date desc limit 3\G;
+*************************** 1. row ***************************
+id: 1
+select_type: SIMPLE
+table: buy_log
+     type: ref
+possible_keys: userid
+      key: userid
+  key_len: 4
+      ref: const
+     rows: 4
+    Extra: Using where; Using filesort
+1 row in set (0.00 sec)
+在Extra这里可以看到Using filesort，Using filesort指排序，但不一定是在文件中完成。
+</code></pre>
+
+<blockquote><p> 本文出自<a href="http://www.ruzuojun.com">http://www.ruzuojun.com</a><br>
+ 参考资料《MySQL技术内幕Innodb存储引擎》</p></blockquote>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Infobright数据仓库安装及参数优化]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/"/>
+    <updated>2014-02-28T20:30:10+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua</id>
+    <content type="html"><![CDATA[<h5>一、认知Infobright数据仓库</h5>
+
+<ol>
+<li>Infobright是开源的DATA Warehouse，可以作为Mysql的存储引擎（BRIGHTHOUSE）使用，select查询与Mysql无区别</li>
+<li>适用于基于Mysql架构下的OLAP，区分为ICE（社区版免费）和IEE（企业版商业授权）</li>
+<li>千万级的查询性能比MyISAM、InnoDB等快5-60倍，且数据量很大时，查询性能基本在同一个数量级，适合聚合查询（SUM,COUNT，AVG，GROUP BY）</li>
+<li>列式存储，无需建索引和分区，高压缩比40:1（官方数字）</li>
+<li>ICE和IEE版本的区别和限制<br>
+<a href="https://www.infobright.org/index.php/Learn-More/ICE_IEE_Comparison/">https://www.infobright.org/index.php/Learn-More/ICE_IEE_Comparison/</a></li>
+</ol>
+
+
+<h5>二、Infobright基本安装初始化</h5>
+
+<pre><code> wget http://www.infobright.org/downloads/ice/infobright-4.0.7-0-x86_64-ice.rpm
+ rpm -ivh infobright-4.0.7-0-x86_64-ice.rpm --prefix=/usr/local/
+
+ A.初始化数据库：
+ /usr/local/infobright/scripts/mysql_install_db --datadir=/data/data/ --basedir=/usr/local/infobright-4.0.7-x86_64/ --force
+   安装之后会生成
+  /etc/my-ib.cnf.inactive （主配置文件，下面两个暂不讨论）
+</code></pre>
+
+<!--more-->
+
+
+<pre><code>  /etc/my-ib-master.cnf
+  /etc/my-ib-slave.cnf
+  /etc/rc.d/init.d/mysqld-ib（启动脚本）
+  mv  /etc/my-ib.cnf.inactive /etc/my-ib.cnf
+  修改/etc/rc.d/init.d/mysqld-ib /etc/my-ib.cnf  的datadir basedir参数到指定位置
+  修改权限chown mysql.mysql /etc/my-ib*  /data/data /ibcache/cachedata
+
+ B.修改warehouse引擎配置文件
+  /data/data/brighthouse.ini
+
+ C.参数优化
+   CacheFolder = /ibcache/cachedata/
+   ServerMainHeapSize = 28000
+   ServerCompressedHeapSize = 4000
+   LoaderMainHeapSize = 800
+   ControlMessages = 3
+   KNFolder = BH_RSI_Repository
+   AllowMySQLQueryPath = 0
+</code></pre>
+
+<p><strong>注释：</strong><br>
+CacheFolder 临时数据目录，用于缓存处理查询的中间结果集，与Datadir相异为宜，可用空间大于20G<br>
+ServerMainHeapSize IB主线程内存，一般设置为物理内存一半；若可能尽量增加<br>
+ServerCompressedHeapSize  服务进程的压缩堆栈空间，存放压缩数据<br>
+LoaderMainHeapSize Bhloader数据导入缓冲区，随目标表的列数增加而调整，loader进程的堆栈空间，一般最大不超过800M<br>
+ControlMessages  控制盒查询日志的信息量级别（1-3之间）<br>
+KNFolder  知识网络目录，默认在datadir目录下<br>
+AllowMySQLQueryPath  是否支持Mysql原生的SQL查询，支持修改为1，否则0<br>
+启动infobright：service mysqld-ib start</p>
+
+<p><strong>ICE版本导入数据方式：<br></strong>
+BRIGHTHOUSE<br>
+load data infile &lsquo;/data/data.txt&rsquo; into table t fields terminated by &lsquo; &rsquo;;</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Mysql分区管理]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/02/28/mysqlfen-qu-guan-li/"/>
+    <updated>2014-02-28T16:06:25+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/02/28/mysqlfen-qu-guan-li</id>
+    <content type="html"><![CDATA[<h5>初探：</h5>
+
+<p>   很长时间没写博客了，这两天一直在学习Mysql分区，总结下:<br/>
+  Mysql支持水平分区，并不支持垂直分区;<br/>
+  <strong>水平分区</strong>：指将同一表中不同行的记录分配到不同的物理文件中；<br/>
+  <strong>垂直分区</strong>：指将同一表中不同列的记录分配到不同的物理文件中；<br/>
+  其中CSV、FEDORATED、MERGE等引擎不支持分区，MYISAM、InnoDB、NDB等引擎支持分区<br/></p>
+
+<h5>目的：</h5>
+
+<p>  将一个表或索引分解为多个更小、更可管理的部分，从逻辑上讲，只有一个表或者索引，但是物理上这个表或者索引可能由数十个物理分区组成；没个分区都是独立的对象，可以独自处理，也可以作为一个更大对象的一部分进行处理（如果分区表很大，亦可以将分区分配到不同的磁盘上去）；在执行查询的时候，优化器会根据分区定义过滤哪些没有我们需要数据的分区，这样查询就无须全表扫描所有分区，只查找包含需要数据的分区即可</p>
+
+<h5>适用场景：</h5>
+
+<p>1、表非常大以至于无法全部都放到内存，或者只在表的最后部分有热点数据，其他均为历史数据
+2、分区表数据更容易维护（可独立对分区进行优化、检查、修复及批量删除大数据可以采用drop分区的形式等）
+3、分区表的数据可以分布在不同的物理设备上，从而高效地利用多个硬件设备
+4、分区表可以避免某些特殊的瓶颈（ps: InnoDB的单个索引的互斥访问、ext3文件系统的inode锁竞争等）
+5、可以备份和恢复独立的分区，非常适用于大数据集的场景</p>
+
+<!--more-->
+
+
+<h5>分区表限制：</h5>
+
+<ol>
+<li>单表最多支持1024个分区</li>
+<li>MySQL5.1只能对数据表的整型列进行分区，或者数据列可以通过分区函数转化成整型列;MySQL5.5的RANGE LIST类型可以直接使用列进行分区</li>
+<li>如果分区字段中有主键或唯一索引的列，那么所有的主键列和唯一索引列都必须包含进来</li>
+<li>分区表无法使用外键约束</li>
+<li>分区必须使用相同的Engine</li>
+<li>对于MyISAM分区表，不能在使用LOAD INDEX INTO CACHE操作</li>
+<li>对于MyISAM分区表，使用时会打开更多的文件描述符（单个分区是一个独立的文件）</li>
+</ol>
+
+
+<h5>分区策略：</h5>
+
+<ol>
+<li>全量扫描数据，不需要任何索引：通过where条件大概定位哪个分区，必须将查询所需要扫描的分区个数限制在很小的数量</li>
+<li>建立分区索引，分离热点：如将明显的热点数据分离到一个分区，使其尽量缓存到内存中，这样就能充分使用索引和缓存</br>
+<strong>注意</strong>：以上策略均以查询得到过滤，丢掉额外的分区，分区本身不产生额外的代价为准则】</li>
+</ol>
+
+
+<h5>分区表使用过程的坑坑：</h5>
+
+<ol>
+<li>NULL值会使分区过滤无效: <br/>
+分表的表达式的值可以是NULL，第一个分区为特殊分区存放NULL或者非法值<br/>
+如： PARTITION BY RANGE YEAR(order_date)进行分区，那么order_date为NULL或者非法值，记录存放在第一个分区:<br/>
+WHERE order_date BETWEEN ‘2014-01-01’ AND ‘2014-01-31’查询时会检查两个分区：<br/>
+第一个分区及1月份分区，避免第一分区数据过大时造成查询代价过高，可以使用：建立第一分区专门存放order_date为NULL和非法值记录
+PARTITION p_nulls VALUES LESS THAN(0)<br/>
+MySQL5.5以后可以才用一下语法解决问题：
+PARTITION BY RANGE COLUMNS(order_date)</li>
+</ol>
+
+
+<p>2.分区列和索引列不匹配<br/>
+   此种情况下查询无法进行分区过滤，分区失效除非查询中包含了可以过滤分区的条件</p>
+
+<p>3.RANGE类型分区随着分区数量增加会对MYSQL额外增加查询分区定义列表（符合条件行在哪个分区）的压力，尽量限制适当的分区数量;key和hash类型分区不存在此问题</p>
+
+<p>4.重组分区或者类似alter语句可能会造成很大的开销<br/>
+   新建或者删除分区操作很快，重组分区或者类似ALTER语句操作会先创建一个临时的分区，将数据复制其中，然后在删除原分区</p>
+
+<h5>分区表类型：</h5>
+
+<p>1.RANGE分区：行数据基于属于一个给定连续区间的列值被放入分区<br/>
+&emsp;MySQL5.5开始支持RANGE COLUMNS的分区（引入Columns分区解决了MySQL 5.5版本之前RANGE分区和LIST分区只支持整数分区，从而导致需要额外的函数计算得到整数或者通过额外的转换表来转换为整数再分区的问题。Columns分区可以细分为RANGE Columns分区和LIST Columns分区，RANGE Columns分区和LIST Columns分区都支持整数、日期时间、字符串三大数据类型）</p>
+
+<p>2.LIST分区：类似于按RANGE分区，区别在于LIST分区是基于列值匹配一个离散值集合中的某个值来进行选择。<br>
+&emsp;MySQL5.5开始支持RANGE COLUMNS的分区
+3.HASH分区：根据用户自定义的表达式的返回值来进行分区，返回值不能为负数
+4.KEY分区：根据MySQLS数据库提供的哈希函数来进行分区
+【注：无论创建何种类型的分区，如果表中存在主键或唯一索引时，分区列必须是唯一索引的一个组成部分】</p>
+
+<h5>分区相关查询：</h5>
+
+<pre><code>查看当前数据库是否支持分区
+mysql&gt; show variables like '%partition%';
++---------------------------------------+-------+
+| Variable_name | Value |
++---------------------------------------+-------+
+| have_partitioning | YES |
+| innodb_adaptive_hash_index_partitions | 1 |
++---------------------------------------+-------+
+2 rows in set
+
+查看创建分区表的CREATE语句
+
+mysql&gt;show create table operation_log;
+
+查看表是否为分区表(Create_options)
+mysql&gt;show table status(当前库所有表状态)
+mysql&gt;show table status from lockrank like '%operation_log%';(lockrank库operation_log表状态)
+*************************** 1. row ***************************
+Table: operation_log
+Create Table: CREATE TABLE `operation_log` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `cid` mediumint(7) unsigned NOT NULL,
+  `accountid` mediumint(8) NOT NULL DEFAULT '0' ,
+  `flag` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `addtime` int(11) unsigned NOT NULL,
+  `device` tinyint(1) unsigned NOT NULL DEFAULT '1' ,
+  PRIMARY KEY (`id`,`addtime`),
+  KEY `idx_accountid_addtime` (`accountid`,`addtime`),
+  KEY `idx_accountid_flag` (`accountid`,`flag`),
+) ENGINE=InnoDB AUTO_INCREMENT=50951039 DEFAULT CHARSET=utf8 COMMENT='操作记录'
+/*!50100 PARTITION BY RANGE (addtime)
+(PARTITION `2013-05` VALUES LESS THAN (1370016000) ENGINE = InnoDB,
+ PARTITION `2013-06` VALUES LESS THAN (1372608000) ENGINE = InnoDB,
+ PARTITION `2013-07` VALUES LESS THAN (1375286400) ENGINE = InnoDB,
+ PARTITION `2013-08` VALUES LESS THAN (1377964800) ENGINE = InnoDB,
+ PARTITION `2013-09` VALUES LESS THAN (1380556800) ENGINE = InnoDB,
+ PARTITION `2013-10` VALUES LESS THAN (1383235200) ENGINE = InnoDB,
+ PARTITION `2013-11` VALUES LESS THAN (1385827200) ENGINE = InnoDB,
+ PARTITION `2013-12` VALUES LESS THAN (1388505600) ENGINE = InnoDB,
+ PARTITION `2014-01` VALUES LESS THAN (1391184000) ENGINE = InnoDB,
+ PARTITION `2014-02` VALUES LESS THAN (1393603200) ENGINE = InnoDB,
+ PARTITION `2014-03` VALUES LESS THAN (1396281600) ENGINE = InnoDB,
+ PARTITION `2014-04` VALUES LESS THAN (1398873600) ENGINE = InnoDB,
+ PARTITION `2014-05` VALUES LESS THAN (1401552000) ENGINE = InnoDB,
+ PARTITION `2014-06` VALUES LESS THAN (1404144000) ENGINE = InnoDB,
+ PARTITION `2014-07` VALUES LESS THAN (1406822400) ENGINE = InnoDB,
+ PARTITION `2014-08` VALUES LESS THAN (1409500800) ENGINE = InnoDB,
+ PARTITION `2014-09` VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */
+1 row in set (0.00 sec)
+
+查看select如何使用分区
+mysql&gt; explain partitions select id,accountid,cid,flag from operation_log where addtime="1369362524" \G ;
+ *************************** 1. row ***************************
+   id: 1
+  select_type: SIMPLE
+table: operation_log
+   partitions: 2013-05
+ type: ALL
+possible_keys: NULL
+  key: NULL
+  key_len: NULL
+  ref: NULL
+ rows: 4384356
+Extra: Using where
+1 row in set (0.00 sec)
+``
+分区表元数据统计表：INFORMATION_SCHEMA.PARTITIONS
+查看分区表operation_log的分区信息
+mysql&gt; SELECT partition_name part, partition_expression expr, partition_description descr, table_rows FROM INFORMATION_SCHEMA.partitions WHERE TABLE_SCHEMA = schema() AND TABLE_NAME='operation_log';
++---------+---------+------------+------------+
+| part| expr| descr | table_rows |
++---------+---------+------------+------------+
+| 2013-05 | addtime | 1370016000 | 5999642 |
+| 2013-06 | addtime | 1372608000 | 4579263 |
+| 2013-07 | addtime | 1375286400 | 3223772 |
+| 2013-08 | addtime | 1377964800 | 1995058 |
+| 2013-09 | addtime | 1380556800 | 2497406 |
+| 2013-10 | addtime | 1383235200 | 4106974 |
+| 2013-11 | addtime | 1385827200 | 6209559 |
+| 2013-12 | addtime | 1388505600 | 6415349 |
+| 2014-01 | addtime | 1391184000 | 3953594 |
+| 2014-02 | addtime | 1393603200 | 0 |
+| 2014-03 | addtime | 1396281600 | 0 |
+| 2014-04 | addtime | 1398873600 | 0 |
+| 2014-05 | addtime | 1401552000 | 0 |
+| 2014-06 | addtime | 1404144000 | 0 |
+| 2014-07 | addtime | 1406822400 | 0 |
+| 2014-08 | addtime | 1409500800 | 0 |
+| 2014-09 | addtime | MAXVALUE | 0 |
++---------+---------+------------+------------+
+17 rows in set (1.48 sec)
+</code></pre>
+
+<h5>创建分区操作</h5>
+
+<pre><code>RANGE分区：
+mysql&gt; CREATE TABLE `operation_log` (
+ -&gt;  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+ -&gt; `cid` mediumint(7) unsigned NOT NULL,
+ -&gt; `accountid` mediumint(8) NOT NULL DEFAULT '0' ,
+ -&gt;  `flag` tinyint(1) unsigned NOT NULL DEFAULT '0',
+ -&gt;  `addtime` int(11) unsigned NOT NULL,
+ -&gt; `device` tinyint(1) unsigned NOT NULL DEFAULT '1' ,
+ -&gt;  PRIMARY KEY (`id`,`addtime`),
+ -&gt; KEY `idx_accountid_addtime` (`accountid`,`addtime`),
+ -&gt;  KEY `idx_accountid_flag` (`accountid`,`flag`),
+ -&gt;) ENGINE=InnoDB AUTO_INCREMENT=50951039 DEFAULT CHARSET=utf8 COMMENT='操作记录'
+ -&gt;/*!50100 PARTITION BY RANGE (addtime)
+ -&gt;(PARTITION `2013-05` VALUES LESS THAN (1370016000) ENGINE = InnoDB,
+ -&gt; PARTITION `2013-06` VALUES LESS THAN (1372608000) ENGINE = InnoDB,
+ -&gt; PARTITION `2013-07` VALUES LESS THAN (1375286400) ENGINE = InnoDB,
+ -&gt; PARTITION `2013-08` VALUES LESS THAN (1377964800) ENGINE = InnoDB,
+ -&gt; PARTITION `2013-09` VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */；
+1 row in set (0.00 sec)
+（ LESS THAN MAXVALUE考虑到可能的最大值）
+
+list分区
+//这种方式失败
+mysql&gt; CREATE TABLE IF NOT EXISTS `list_part` (
+ -&gt;   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+ -&gt;   `province_id` int(2) NOT NULL DEFAULT 0 COMMENT '省',
+ -&gt;   `name` varchar(50) NOT NULL DEFAULT '' COMMENT '名称',
+ -&gt;   `sex` int(1) NOT NULL DEFAULT '0' COMMENT '0为男，1为女',
+ -&gt;   PRIMARY KEY (`id`)
+ -&gt; ) ENGINE=INNODB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1
+ -&gt; PARTITION BY LIST (province_id) (
+ -&gt; PARTITION p0 VALUES IN (1,2,3,4,5,6,7,8),
+ -&gt; PARTITION p1 VALUES IN (9,10,11,12,16,21),
+ -&gt; PARTITION p2 VALUES IN (13,14,15,19),
+ -&gt; PARTITION p3 VALUES IN (17,18,20,22,23,24)
+ -&gt; );
+ERROR 1503 (HY000): A PRIMARY KEY must include all columns in the table's partitioning function
+
+//这种方式成功
+mysql&gt; CREATE TABLE IF NOT EXISTS `list_part` (
+ -&gt;   `id` int(11) NOT NULL  COMMENT '用户ID',
+ -&gt;   `province_id` int(2) NOT NULL DEFAULT 0 COMMENT '省',
+ -&gt;   `name` varchar(50) NOT NULL DEFAULT '' COMMENT '名称',
+ -&gt;   `sex` int(1) NOT NULL DEFAULT '0' COMMENT '0为男，1为女'
+ -&gt; ) ENGINE=INNODB  DEFAULT CHARSET=utf8
+ -&gt; PARTITION BY LIST (province_id) (
+ -&gt; PARTITION p0 VALUES IN (1,2,3,4,5,6,7,8),
+ -&gt; PARTITION p1 VALUES IN (9,10,11,12,16,21),
+ -&gt; PARTITION p2 VALUES IN (13,14,15,19),
+ -&gt; PARTITION p3 VALUES IN (17,18,20,22,23,24)
+ -&gt; );
+Query OK, 0 rows affected (0.33 sec)
+上面的这个创建list分区时，如果有主銉的话，分区时主键必须在其中，不然就会报错。如果我不用主键，分区就创建成功了，一般情况下，一个张表肯定会有一个主键，这算是一个分区的局限性
+
+
+hash分区
+mysql&gt; CREATE TABLE IF NOT EXISTS `hash_part` (
+ -&gt;   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '评论ID',
+ -&gt;   `comment` varchar(1000) NOT NULL DEFAULT '' COMMENT '评论',
+ -&gt;   `ip` varchar(25) NOT NULL DEFAULT '' COMMENT '来源IP',
+ -&gt;   PRIMARY KEY (`id`)
+ -&gt; ) ENGINE=INNODB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1
+ -&gt; PARTITION BY HASH(id)
+ -&gt; PARTITIONS 3;
+Query OK, 0 rows affected (0.06 sec)
+
+key分区 
+mysql&gt; CREATE TABLE IF NOT EXISTS `key_part` (
+ -&gt;   `news_id` int(11) NOT NULL  COMMENT '新闻ID',
+ -&gt;   `content` varchar(1000) NOT NULL DEFAULT '' COMMENT '新闻内容',
+ -&gt;   `u_id` varchar(25) NOT NULL DEFAULT '' COMMENT '来源IP',
+ -&gt;   `create_time` DATE NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT '时间'
+ -&gt; ) ENGINE=INNODB  DEFAULT CHARSET=utf8
+ -&gt; PARTITION BY LINEAR HASH(YEAR(create_time))
+ -&gt; PARTITIONS 3;
+Query OK, 0 rows affected (0.07 sec)
+</code></pre>
+
+<p><strong>增加子分区操作：</strong></p>
+
+<p>子分区是分区表中每个分区的再次分割，子分区既可以使用HASH希分区，也可以使用KEY分区。这 也被称为复合分区（composite partitioning）。</p>
+
+<pre><code>1. 如果一个分区中创建了子分区，其他分区也要有子分区
+2. 如果创建了了分区，每个分区中的子分区数必有相同
+3. 同一分区内的子分区，名字不相同，不同分区内的子分区名子可以相同（5.1.50不适用）
+
+ mysql&gt; CREATE TABLE IF NOT EXISTS `sub_part` (
+ -&gt;   `news_id` int(11) NOT NULL  COMMENT '新闻ID',
+ -&gt;   `content` varchar(1000) NOT NULL DEFAULT '' COMMENT '新闻内容',
+ -&gt;   `u_id` int(11) NOT NULL DEFAULT 0s COMMENT '来源IP',
+ -&gt;   `create_time` DATE NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT '时间'
+ -&gt; ) ENGINE=INNODB  DEFAULT CHARSET=utf8
+ -&gt; PARTITION BY RANGE(YEAR(create_time))
+ -&gt; SUBPARTITION BY HASH(TO_DAYS(create_time))(
+ -&gt; PARTITION p0 VALUES LESS THAN (1990)(SUBPARTITION s0,SUBPARTITION s1,SUBPARTITION s2),
+ -&gt; PARTITION p1 VALUES LESS THAN (2000)(SUBPARTITION s3,SUBPARTITION s4,SUBPARTITION good),
+ -&gt; PARTITION p2 VALUES LESS THAN MAXVALUE(SUBPARTITION tank0,SUBPARTITION tank1,SUBPARTITION tank3)
+ -&gt; );
+Query OK, 0 rows affected (0.07 sec)
+</code></pre>
+
+<p><strong>分区管理：</strong></p>
+
+<pre><code>增加分区操作（针对设置MAXVALUE）
+ range添加分区
+mysql&gt;alter table operation_log add  partition(partition `2013-10` values less than (1383235200));  ---&gt;适用于没有设置MAXVALUE的分区添加
+   ERROR 1481 (HY000):MAXVALUE can only be used in last partition definition
+mysql&gt;alter table operation_log REORGANIZE partition `2013-09` into (partition `2013-09` values less than (1380556800),partition `2013-10` values less than (1383235200),partition `2013-11` values less than maxvalue);
+
+ list添加分区
+mysql&gt; alter table list_part add partition(partition p4 values in (25,26,28));
+Query OK, 0 rows affected (0.01 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+ hash重新分区
+mysql&gt; alter table list_part add partition(partition p4 values in (25,26,28));
+Query OK, 0 rows affected (0.01 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+ key重新分区
+mysql&gt; alter table key_part add partition partitions 4;
+Query OK, 1 row affected (0.06 sec)//有数据也会被重新分配
+Records: 1  Duplicates: 0  Warnings: 0
+
+子分区添加新分区，虽然我没有指定子分区，但是系统会给子分区命名的
+mysql&gt; alter table sub1_part add partition(partition p3 values less than MAXVALUE);
+Query OK, 0 rows affected (0.02 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+</code></pre>
+
+<p><strong>删除分区操作</strong></p>
+
+<pre><code>alter table user drop partition `2013-05`;
+</code></pre>
+
+<h5>分区表其他操作</h5>
+
+<pre><code>重建分区(官方：与先drop所有记录然后reinsert是一样的效果；用于整理表碎片)
+alter table operation_log rebuild partition `2014-01`;
+重建多个分区
+alter table operation_log rebuild partition `2014-01`,`2014-02`;
+过程如下：
+
+pro
+优化分区（如果删除了一个分区的大量记录或者对一个分区的varchar blob text数据类型的字段做了许多更新，此时可以对分区进行优化以回收未使用的空间和整理分区数据文件）
+alter table operation_log  optimize  partition `2014-01`;
+
+优化的操作相当于check partition,analyze partition 和repair patition
+
+分析分区
+alter table operation_log  analyze partition  `2014-01`;
+
+修复分区
+alter table operation_log repair partition   `2014-01`;
+
+检查分区
+alter table operation_log check  partition   `2014-01`;
+</code></pre>
+
+<p><strong>注释：</strong></p>
+
+<ol>
+<li>mysqlcheck、myisamchk并不支持分区表，analyze,check,optimize,rebuild,repair,truncate不支持子分区操作</li>
+<li>在MySQL5.6中，可以使用清空一个分区数据：alter table operation_log  truncate partition   <code>2014-01</code>;</li>
+<li>清空该分区表所有分区数据：alter table operation_log  truncate partition   all;</li>
+</ol>
+
+
+<p><strong>参考文档：</strong></p>
+
+<p><a href="http://blog.51yip.com/mysql/1013.html">http://blog.51yip.com/mysql/1013.html</a><br>
+<a href="https://dev.mysql.com/doc/refman/5.6/en/partitioning-maintenance.html">https://dev.mysql.com/doc/refman/5.6/en/partitioning-maintenance.html</a><br>
+<a href="http://dev.mysql.com/doc/refman/5.6/en/index.html">http://dev.mysql.com/doc/refman/5.6/en/index.html</a></p>
+]]></content>
+  </entry>
+  
+</feed>
