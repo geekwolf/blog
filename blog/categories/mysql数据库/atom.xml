@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Mysql数据库 | Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/blog/categories/mysql数据库/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-07-03T14:03:29+08:00</updated>
+  <updated>2014-07-03T14:18:27+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -12,6 +12,70 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[IO调度算法适用场景]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/07/03/iodiao-du-suan-fa-gua-yong-chang-jing/"/>
+    <updated>2014-07-03T13:35:54+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/07/03/iodiao-du-suan-fa-gua-yong-chang-jing</id>
+    <content type="html"><![CDATA[<p>&emsp;&emsp;通常磁盘的读写影响是由磁头到柱面移动造成了延迟，解决这种延迟内核主要采用两种策略：缓存和IO调度算法来进行弥补<br>
+<strong>Caching：</strong>IO请求被缓存在大页和buffer caches里面，读请求会预先从缓存读取，写请求会先写进缓存，然后在保存到磁盘<br>
+<strong>四种IO调度算法：</strong></p>
+
+<pre><code>cat /sys/block/sda/queue/scheduler
+noop anticipatory deadline [cfq] (当前是cfq)
+</code></pre>
+
+<p><img src="http://geekwolf.github.io/images/mysql/io.png" alt="" /></p>
+
+<p><strong>noop：</strong>noop调度算法不会对I/O请求排序操作，除了合并外也不会做任何其他优化，直接以类似FIFO的顺序提交I/O请求；对于SSD、虚拟机或者存储设备可能会更加高效<br>
+<strong>anticipatory(as)：</strong>基于预测的IO算法，类似DeadLine，也维护了三个请求对列；区别在于当它处理完一个I/O请求后并不会直接返回处理下一个请求，而是等待6ms(默认),如果这时候有新来的针对当前扇区相邻扇区的请求，那么会直接处理它，当等待时间结束后，调度器才返回处理下一个对列请求<br>
+试想一下，如果系统有频繁的针对邻近扇区的I/O请求，那么这种预测算法必然大幅提高整体的吞吐量，毕竟节约了那么多寻道时间<br>
+<strong>deadline：</strong>DEADLINE 在CFQ的基础上，解决了IO请求饿死的极端情况。除了CFQ本身具有的IO排序队列之外，DEADLINE额外分别为读IO和写IO提供了FIFO队 列。读FIFO队列的最大等待时间为500ms，写FIFO队列的最大等待时间为5s。FIFO队列内的IO请求优先级要比CFQ队列中的高，，而读 FIFO队列的优先级又比写FIFO队列的优先级高。优先级可以表示如下：<br>
+&emsp;&emsp;FIFO(Read) > FIFO(Write) > CFQ<br>
+&emsp;&emsp;deadline 算法保证对于既定的 IO 请求以最小的延迟时间，从这一点理解，对于 DSS 应用应该会是很适合的<br>
+<strong>cfq(2.6.18+内核默认CFQ)：</strong>该算法的特点是按照IO请求的地址进行排序，而不是按照先来后到的顺序来进行响应。在传统的SAS盘上，磁盘寻道花去了绝大多数的IO响应时间。CFQ的出发点是对IO地址进行排序，以尽量少的磁盘旋转次数来满足尽可能多的IO请求。在 CFQ算法下，SAS盘的吞吐量大大提高了。但是相比于NOOP的缺点是，先来的IO请求并不一定能被满足，可能会出现饿死的情况；</p>
+
+<!--more-->
+
+
+<p></p>
+
+<p><strong>调度算法适用场合：</strong><br>
+&emsp;&emsp;在传统的SAS盘上，CFQ、DEADLINE、ANTICIPATORY都是不错的选择；对于专属的数据库服务器和文件服务器，DEADLINE的吞吐量和响应时间都表现良好，适用于大量IO操作的环境<br><br/>
+&emsp;&emsp;在SSD、Fusion IO上，最简单的NOOP反而可能是最好的算法，因为其他三个算法的优化是基于缩短寻道时间的，而固态硬盘没有所谓的寻道时间且IO响应时间非常短。<br>
+&emsp;&emsp;ANTICIPATORY通常更适用于大量持续读的环境，并不适用于DB Server<br>
+&emsp;&emsp;CFQ 适用于有大量来自不同进程的并发读写的环境如桌面环境等<br></p>
+
+<p><strong>手动临时更改调度算法：</strong></p>
+
+<pre><code>echo deadline &gt; /sys/block/sda/queue/scheduler
+</code></pre>
+
+<p><strong>永久更改：</strong><br>
+<strong>A.使用tuned来修改调度算法</strong><br></p>
+
+<pre><code>比如：vim /etc/tuned-profiles/throughtput-performance/ktune.sysconfig
+ELEVATOR="deadline"
+ELEVATOR_TUNE_DEVS="/sys/block/{sd,cciss,dm-,vd}*/queue/scheduler"
+tuned-admin profile throughtput-performance
+chkconfig tuned on
+chkconfig ktune on
+更改调度算法之后/sys/block/sda/quue/iosched/会生成对应的参数文件
+</code></pre>
+
+<p><strong>B.通过修改grub.conf来修改调度算法</strong></p>
+
+<pre><code> kernel /vmlinuz-2.6.32-358.11.1.el6.x86_64 ro root=UUID=97693d73-443f-438a-90a3-208855faff19 rd_NO_LUKS  KEYBOARDTYPE=pc KEYTABLE=us rd_NO_MD crashkernel=auto LANG=zh_CN.UTF-8 rd_NO_LVM rd_NO_DM elevator=deadline rhgb quiet
+</code></pre>
+
+<p><strong>查看调度算法参数的含义：</strong></p>
+
+<pre><code>yum -y install kernel-doc
+比如:/usr/share/doc/kernel-doc-2.6.32/Documentation/block/deadline-iosched.txt
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[MySQL5.6基于GTID复制配置]]></title>
@@ -1386,178 +1450,6 @@ Hot Schema Changes特性支持在线创建索引和添加/删除属性列等DDL�
 
 <p><strong>注：</strong>
 具体使用哪种引擎要根据自己的业务的特点去决定</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[理解MySQL运算符和常用内置函数]]></title>
-    <link href="http://geekwolf.github.io/blog/2014/04/09/li-jie-mysqlyun-suan-fu/"/>
-    <updated>2014-04-09T14:56:41+08:00</updated>
-    <id>http://geekwolf.github.io/blog/2014/04/09/li-jie-mysqlyun-suan-fu</id>
-    <content type="html"><![CDATA[<h5>一、MySQL中的运算符</h5>
-
-<p><img src="/images/mysql/suanshu.png" alt="" /></p>
-
-<p><img src="/images/mysql/lj.png" alt="" /></p>
-
-<!--more-->
-
-
-<p><strong>注意事项：<br>
-1.在除法运算和模数运算中，如果除数是0，将是非法除数，结果返回NULL</strong><br>
-&emsp;取模运算中，也可以用MOD(a,b)函数或者a%b</p>
-
-<pre><code>mysql&gt; select 1/0, 100%0;
-+------+-------+
-| 1/0 | 100%0 |
-+------+-------+
-| NULL | NULL |
-+------+-------+
-1 row in set (0.01 sec)
-mysql&gt; select 3%2,mod(3,2);
-+------+----------+
-| 3%2 | mod(3,2) |
-+------+----------+
-| 1 | 1 |
-+------+----------+
-1 row in set (0.00 sec)
-</code></pre>
-
-<p><strong>2.NULL只能用&lt;=>进行比较，其他的比较运算符时返回NULL</strong></p>
-
-<pre><code>mysql&gt; select 'a'&lt;'b','a'&lt;'a',1&lt;2,null&lt;=&gt;null;
-+---------+---------+-----+-------------+
-| 'a'&lt;'b' | 'a'&lt;'a' | 1&lt;2 | null&lt;=&gt;null |
-+---------+---------+-----+-------------+
-| 1 | 0 | 1 | 1 |
-+---------+---------+-----+-------------+
-1 row in set (0.02 sec)
-mysql&gt; select 'a'&lt;'b','a'&lt;'a',1&lt;2,null&lt;null;
-+---------+---------+-----+-----------+
-| 'a'&lt;'b' | 'a'&lt;'a' | 1&lt;2 | null&lt;null |
-+---------+---------+-----+-----------+
-| 1 | 0 | 1 | NULL |
-+---------+---------+-----+-----------+
-1 row in set (0.00 sec)
-</code></pre>
-
-<p><strong>3.BETWEEN IN</strong><br>
-&emsp;between运算符使用“a BETWEEN min AND max”当a大于等于min并且小于等于max返回1，否则返回0
-&emsp;IN运算符使用"a IN（values1,values2,&hellip;)&ldquo;，当a的值存在于列表中时，则郑鄂表达式返回值1，否则0</p>
-
-<pre><code>mysql&gt; select 10 between 10 and 20,9 between 10 and 20;
-+----------------------+---------------------+
-| 10 between 10 and 20 | 9 between 10 and 20 |
-+----------------------+---------------------+
-| 1 | 0 |
-+----------------------+---------------------+
-1 row in set (0.00 sec)
-mysql&gt; select 1 in(1,2,3),'t' in ('t','a','b','f'),0 in(1,2);
-+-------------+--------------------------+-----------+
-| 1 in(1,2,3) | 't' in ('t','a','b','f') | 0 in(1,2) |
-+-------------+--------------------------+-----------+
-| 1 | 1 | 0 |
-+-------------+--------------------------+-----------+
-1 row in set (0.00 sec)
-</code></pre>
-
-<p><strong>4.REGEXP运算符格式"str REGEXP str_pat"</strong><br>
-&emsp;当str字符串中含有str_pat相匹配的字符串时返回1，否则0</p>
-
-<pre><code>mysql&gt; select 'abcdef' regexp 'ac','abcdef' regexp 'ab','abcdefg' regexp 'k';
-+----------------------+----------------------+----------------------+
-| 'abcdef' regexp 'ac' | 'abcdef' regexp 'ab' | 'abcdefg' regexp 'k' |
-+----------------------+----------------------+----------------------+
-| 0 | 1 | 0 |
-+----------------------+----------------------+----------------------+
-1 row in set (0.00 sec)
-</code></pre>
-
-<p><strong>5. 逻辑与AND和逻辑或OR</strong><br>
-&emsp;AND：当所有操作数都为非零，并且不为NULL时，返回1；当一个或多个为0时，返回0；操作数任何一个为NULL，则返回NULL<br>
-&emsp;OR   : 当两个操作数均为非NULL值时，如有任意一个为非零值，则返回1，否则0；<br>
-&emsp;&emsp;&emsp; 当有一个操作数为NULL时，如另外一个为非0，则结果1，否则NULL;<br>
-&emsp;&emsp;&emsp; 如果两个操作数均为NULL，则所得结果为NULL</p>
-
-<pre><code>mysql&gt; select (1 and 1),(0 and 1),(3 and 1),(1 and null);
-+-----------+-----------+-----------+--------------+
-| (1 and 1) | (0 and 1) | (3 and 1) | (1 and null) |
-+-----------+-----------+-----------+--------------+
-| 1 | 0 | 1 | NULL |
-+-----------+-----------+-----------+--------------+
-1 row in set (0.00 sec)
-mysql&gt; select (1 or 0),(0 or 0),(1 or null),(1 or 1),(null or null);
-+----------+----------+-------------+----------+----------------+
-| (1 or 0) | (0 or 0) | (1 or null) | (1 or 1) | (null or null) |
-+----------+----------+-------------+----------+----------------+
-| 1 | 0 | 1 | 1 | NULL |
-+----------+----------+-------------+----------+----------------+
-1 row in set (0.00 sec)
-</code></pre>
-
-<p><strong>6.位运算</strong><br>
-&emsp;位与对多个操作数的二进制位做逻辑与操作<br></p>
-
-<pre><code>mysql&gt; select bin(2);
-+--------+
-| bin(2) |
-+--------+
-| 10 |
-+--------+
-1 row in set (0.00 sec)
-mysql&gt; select bin(3);
-+--------+
-| bin(3) |
-+--------+
-| 11 |
-+--------+
-1 row in set (0.00 sec)
-mysql&gt; select bin(100);
-+----------+
-| bin(100) |
-+----------+
-| 1100100 |
-+----------+
-1 row in set (0.00 sec)
-mysql&gt; select 2&amp;3&amp;100;
-+---------+
-| 2&amp;3&amp;100 |
-+---------+
-| 0 |
-+---------+
-1 row in set (0.00 sec)
-</code></pre>
-
-<p><strong>7.位取反</strong><br>
-&emsp;在MySQL中，常量数字默认会以8个字节来表示，8字节就是64位，常量1的二进制表示为63个0加1个1，位取反后就是63个1加1个0，转换成十进制后就是18446744073709551614</p>
-
-<p><img src="/images/mysql/qf.png" alt="" /></p>
-
-<p><strong>8.位右移</strong><br></p>
-
-<p><img src="/images/mysql/wyy.png" alt="" /></p>
-
-<h5>二、运算符的优先级</h5>
-
-<p><img src="/images/mysql/yxj.png" alt="" /></p>
-
-<h5>三、常用内置函数</h5>
-
-<p><img src="/images/mysql/strfun.png" alt="" /></p>
-
-<p><img src="/images/mysql/numfun.png" alt="" /></p>
-
-<p><img src="/images/mysql/timefun.png" alt="" /></p>
-
-<p><img src="/images/mysql/otherfun.png" alt="" /></p>
-
-<p><strong>注意事项：</strong><br>
-date_format(date,fmt)fmt格式:<br>
-<a href="http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-format">http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-format</a><br>
-date_add(date,INTERVAL expr type) type类型：<br>
-<a href="http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-add">http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html#function_date-add</a></p>
-
-<blockquote><p><a href="http://dev.mysql.com/doc/refman/5.5/en/functions.html">http://dev.mysql.com/doc/refman/5.5/en/functions.html</a></p></blockquote>
 ]]></content>
   </entry>
   

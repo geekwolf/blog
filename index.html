@@ -74,6 +74,63 @@
       
   <header>
     
+      <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/07/03/iodiao-du-suan-fa-gua-yong-chang-jing/">IO调度算法适用场景</a></h4>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-07-03T13:35:54+08:00" pubdate data-updated="true">Jul 3<span>rd</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>&emsp;&emsp;通常磁盘的读写影响是由磁头到柱面移动造成了延迟，解决这种延迟内核主要采用两种策略：缓存和IO调度算法来进行弥补<br>
+<strong>Caching：</strong>IO请求被缓存在大页和buffer caches里面，读请求会预先从缓存读取，写请求会先写进缓存，然后在保存到磁盘<br>
+<strong>四种IO调度算法：</strong></p>
+
+<pre><code>cat /sys/block/sda/queue/scheduler
+noop anticipatory deadline [cfq] (当前是cfq)
+</code></pre>
+
+<p><img src="http://geekwolf.github.io/images/mysql/io.png" alt="" /></p>
+
+<p><strong>noop：</strong>noop调度算法不会对I/O请求排序操作，除了合并外也不会做任何其他优化，直接以类似FIFO的顺序提交I/O请求；对于SSD、虚拟机或者存储设备可能会更加高效<br>
+<strong>anticipatory(as)：</strong>基于预测的IO算法，类似DeadLine，也维护了三个请求对列；区别在于当它处理完一个I/O请求后并不会直接返回处理下一个请求，而是等待6ms(默认),如果这时候有新来的针对当前扇区相邻扇区的请求，那么会直接处理它，当等待时间结束后，调度器才返回处理下一个对列请求<br>
+试想一下，如果系统有频繁的针对邻近扇区的I/O请求，那么这种预测算法必然大幅提高整体的吞吐量，毕竟节约了那么多寻道时间<br>
+<strong>deadline：</strong>DEADLINE 在CFQ的基础上，解决了IO请求饿死的极端情况。除了CFQ本身具有的IO排序队列之外，DEADLINE额外分别为读IO和写IO提供了FIFO队 列。读FIFO队列的最大等待时间为500ms，写FIFO队列的最大等待时间为5s。FIFO队列内的IO请求优先级要比CFQ队列中的高，，而读 FIFO队列的优先级又比写FIFO队列的优先级高。优先级可以表示如下：<br>
+&emsp;&emsp;FIFO(Read) > FIFO(Write) > CFQ<br>
+&emsp;&emsp;deadline 算法保证对于既定的 IO 请求以最小的延迟时间，从这一点理解，对于 DSS 应用应该会是很适合的<br>
+<strong>cfq(2.6.18+内核默认CFQ)：</strong>该算法的特点是按照IO请求的地址进行排序，而不是按照先来后到的顺序来进行响应。在传统的SAS盘上，磁盘寻道花去了绝大多数的IO响应时间。CFQ的出发点是对IO地址进行排序，以尽量少的磁盘旋转次数来满足尽可能多的IO请求。在 CFQ算法下，SAS盘的吞吐量大大提高了。但是相比于NOOP的缺点是，先来的IO请求并不一定能被满足，可能会出现饿死的情况；</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/07/03/iodiao-du-suan-fa-gua-yong-chang-jing/">继续阅读 &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/">Centos6.5下安装Puppet及测试</a></h4>
     
     
@@ -566,68 +623,6 @@ alter table emp rename [to] test;
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/03/20/mysqlshi-jian-diao-du-qi-event-scheduler/">Mysql事件调度器(Event Scheduler)</a></h4>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-20T18:15:54+08:00" pubdate data-updated="true">Mar 20<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h5>目录:</h5>
-
-<p><a href="#t1">一、查看当前是否开启了event scheduler三种方法:</a><br>
-<a href="#t2">二、启动关闭event scheduler方法</a><br>
-<a href="#t3">三、创建Event</a><br>
-<a href="#t4">四、修改Event</a><br>
-<a href="#t5">五、查询Event信息</a><br></p>
-
-<p>&emsp;&emsp;Mysql中的事件调度器Event Scheduler类似于linux下的crontab计划任务的功能,它是由一个特殊的时间调度线程执行的</p>
-
-<h5><span id="t1">一、查看当前是否开启了event scheduler三种方法</span>:</h5>
-
-<p>1)     SHOW VARIABLES LIKE &lsquo;event_scheduler&rsquo;;<br>
-2)     SELECT @@event_scheduler;<br>
-3)     SHOW PROCESSLIST;(是否有State为：Waiting for next activation的进程，User为event_scheduler)<br></p>
-
-<h5><span id="t2">二、启动关闭event scheduler方法</span>:</h5>
-
-<p> 时间调度器是否开启由全局变量event_scheduler决定，它有三个可以设定的值：
-&ndash;  OFF  : 事件调度器是关闭的，调度线程并没有运行，并且在SHOW PROCESSLIST中不显示，默认值是OFF
-&ndash;  ON ：事件调度器是开启的，调度线程并没有运行，并且执行所有的调度事件，通过SHOW PROCESSLIST可以查看Waiting for next activation的进程
-&ndash;  DISABLED : 设定这个值表示Event Scheduler是被禁止的，无法在Mysql运行状态下改变其值<br></p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/03/20/mysqlshi-jian-diao-du-qi-event-scheduler/">继续阅读 &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -652,6 +647,10 @@ alter table emp rename [to] test;
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/07/03/iodiao-du-suan-fa-gua-yong-chang-jing/">IO调度算法适用场景</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/">Centos6.5下安装Puppet及测试</a>
       </li>
     
@@ -667,15 +666,11 @@ alter table emp rename [to] test;
         <a href="/blog/2014/06/05/mysqlfu-zhi-yuan-li-yu-pei-zhi/">MySQL复制原理与配置</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/05/17/mhagao-ke-yong-bu-shu-ji-ce-shi/">MHA高可用部署及测试</a>
-      </li>
-    
   </ul>
 </section>
 <section>
     <h2>文章归档</h2>
-    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (10)</a></li><li><a href='/blog/categories/自动化运维'>自动化运维 (2)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (11)</a></li><li><a href='/blog/categories/自动化运维'>自动化运维 (2)</a></li></ul>
 </section>
 <section>
   <h2>最新评论</h2>
