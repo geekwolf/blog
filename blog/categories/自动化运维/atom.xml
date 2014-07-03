@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: 自动化运维 | Geekwolf's Blog]]></title>
+  <link href="http://geekwolf.github.io/blog/categories/自动化运维/atom.xml" rel="self"/>
+  <link href="http://geekwolf.github.io/"/>
+  <updated>2014-07-03T13:19:29+08:00</updated>
+  <id>http://geekwolf.github.io/</id>
+  <author>
+    <name><![CDATA[Geekwolf]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Centos6.5下安装Puppet及测试]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi/"/>
+    <updated>2014-06-16T13:50:24+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/06/16/centos6-dot-5xia-an-zhuang-puppetji-ce-shi</id>
+    <content type="html"><![CDATA[<p>一、<a href="#ap1">安装前注意事项</a><br>
+二、<a href="#ap2">环境说明</a><br>
+三、<a href="#ap3">安装步骤</a><br>
+&emsp;&emsp;<a href="#ap4">配置puppet的yum源</a><br>
+&emsp;&emsp;<a href="#ap5">分别安装puppet-master和puppet</a><br>
+&emsp;&emsp;<a href="#ap6">修改配置</a><br>
+&emsp;&emsp;<a href="#ap7">证书签发、注销、清楚</a><br>
+&emsp;&emsp;<a href="#ap8">测试</a><br></p>
+
+<p><strong><span id="ap1">安装前注意事项：</span></strong><br></p>
+
+<ol>
+<li>Puppet master尽量使用高配置server<br></li>
+<li>任何官方未支持的系统也可以正常运行puppet，前提是要装合适的版本的ruby环境<br>
+&emsp;请参考:<a href="http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements">http://docs.puppetlabs.com/puppet/latest/reference/system_requirements.html#basic-requirements</a><br></li>
+<li>master防火墙放行8140端口给agent<br></li>
+<li>每个节点都必须有一个唯一的主机名，正解析和反解析都被正确配置，如果没有DNS服务，必须在每个节点上配置/etc/hosts<br>
+&emsp;<strong>注</strong>：默认情况下puppet的master的主机名是puppet<br></li>
+<li>由于Puppet master同时扮演着CA(认证授权机构)的角色,需要时间同步,启动ntpd服务；<br></li>
+<li>两种工作模式：Master/Agent、Standatone<br></li>
+</ol>
+
+
+<p><strong><span id="ap2">环境说明：</span></strong><br></p>
+
+<!--more-->
+
+
+<p></p>
+
+<p>192.168.10.216&emsp;&emsp;&emsp;Puppet Agent&emsp;&emsp;&emsp;c1.geekwolf.github.io<br>
+192.168.10.217&emsp;&emsp;&emsp;Puppet Agent&emsp;&emsp;&emsp;c2.geekwolf.github.io<br>
+192.168.10.218&emsp;&emsp;&emsp;Puppet Master&emsp;&emsp;&emsp;m.geekwolf.github.io<br></p>
+
+<p><strong><span id="ap3">安装步骤</span></strong><br></p>
+
+<p><strong><span id="ap4">1.安装puppet的yum源</span></strong><br>
+rpm -ivh <a href="http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm">http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm</a><br>
+说明:若要测试RC版及相关软件编辑/etc/yum.repos.d/puppetlabs.repo：<br></p>
+
+<pre><code>[puppetlabs-devel]
+name=Puppet Labs Devel El 6 - $basearch
+baseurl=http://yum.puppetlabs.com/el/6/devel/$basearch
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+enabled=1
+gpgcheck=1
+
+yum -y install  ntp
+service ntpd start
+chkconfig ntpd on
+</code></pre>
+
+<p>配置好hostname，并将解析写进hosts同步到所有节点<br>
+<strong><span id="ap5">2.在master:192.168.10.218安装puppet-server</span></strong><br></p>
+
+<pre><code>yum -y install puppet-server（依赖puppet、facter一起安装）
+生成启动脚本:
+/etc/init.d/puppetmaster 
+Master配置文件目录：
+/etc/puppet
+
+chkconfig puppetmaster on
+service puppetmaster start
+
+升级puppet master：
+puppet resource package puppet ensure=latest
+service puppetmaster restart
+</code></pre>
+
+<p><strong>3.在c1 c2 上安装puppet</strong><br></p>
+
+<pre><code>yum -y install puppet
+chkconfig puppet on
+service puppet start
+Agent配置文件目录:
+/etc/sysconfig/puppet.conf
+</code></pre>
+
+<p><strong><span id="ap6">4.配置puppet agent c1 c2指定Puppet Master地址</span></strong><br></p>
+
+<pre><code>vim  /etc/puppet/puppet.conf
+[main]
+# The Puppet log directory.
+# The default value is '$vardir/log'.
+logdir = /var/log/puppet
+# Where Puppet PID files are kept.
+# The default value is '$vardir/run'.
+rundir = /var/run/puppet
+# Where SSL certificates are kept.
+# The default value is '$confdir/ssl'.
+ssldir = $vardir/ssl
+[agent]
+# The file in which puppetd stores a list of the classes
+# associated with the retrieved configuratiion. Can be loaded in
+# the separate ``puppet`` executable using the ``--loadclasses``
+# option.
+# The default value is '$confdir/classes.txt'.
+classfile = $vardir/classes.txt
+# Where puppetd caches the local configuration. An
+# extension indicating the cache format is added automatically.
+# The default value is '$confdir/localconfig'.
+localconfig = $vardir/localconfig
+server = m.geekwolf.github.io
+</code></pre>
+
+<p><strong><span id="ap7">5.签发证书</span></strong><br>
+<strong>A.手动签发证书</strong><br>
+c1、c2申请证书，由于已经配置了server=m.geekwolf.github.io，故申请时不必在指定server<br></p>
+
+<pre><code>[root@c1 ~]# puppet agent -t
+Info: Creating a new SSL key for c1.geekwolf.github.io
+Info: Caching certificate for ca
+Info: Caching certificate_request for c1.geekwolf.github.io
+Info: Caching certificate for ca
+Exiting; no certificate found and waitforcert is disabled
+</code></pre>
+
+<p>在Master上管理证书：<br>
+<strong>签发证书：</strong><br></p>
+
+<pre><code>puppet cert list --all                   查看请求签发的证书（+表示已签发，-未签发）
+puppet cert --sign c1.geekwolf.github.io 签发主机c1.geekwolf.github.io的证书
+puppet cert --sign --all                 签发所有请求的主机的证书
+</code></pre>
+
+<p><strong>注销证书：</strong></p>
+
+<pre><code>puppet cert revoke  c1.geekwolf.github.io 注销主机c1.geekwolf.github.io的证书
+puppet cert revoke --all                  注销所有主机的证书（若想在重新签名，需先重启puppetmaster,然后节点在请求申请证书，再签名即可）
+</code></pre>
+
+<p><strong>清除证书：</strong></p>
+
+<pre><code>在master上清除某节点证书,重启puppetmaster后生效
+puppet cert --clean c1.geekwolf.github.io 
+
+在agent上删除相关目录,可以重新再申请签名   
+rm -rf /var/lib/puppet/ssl 或者rm -rf /var/lib/puppet/certs/c1.geekwolf.github.io.pem 
+</code></pre>
+
+<p><strong>B.自动签发证书</strong><br>
+在Puppet Master创建/etc/puppet/autosign.conf文件<br>
+*.geekwolf.github.io        (geekwolf.github.io域的申请会自动签发)<br>
+service puppetmaster restart<br>
+所有节点上执行<br>
+rm -rf /var/lib/puppet/ssl<br></p>
+
+<p>然后所有的节点申请签名<br>
+ puppet agent -t &mdash;server m.geekwolf.github.io</p>
+
+<pre><code>在Puppet Master查看签名
+[root@m puppet]# puppet cert list --all
++ "c1.geekwolf.github.io" (SHA256) 2A:28:96:6C:B0:36:E8:CC:71:80:F4:C6:B5:D8:61:94:A8:59:46:9D:52:A3:58:2A:D9:78:45:A3:57:93:1C:38
++ "c2.geekwolf.github.io" (SHA256) 09:59:71:9A:CA:AE:92:82:1D:D4:0C:A6:D4:5F:51:C3:D6:E4:EE:80:20:19:CB:B1:71:EE:B3:24:F7:E3:80:71
++ "m.geekwolf.github.io" (SHA256) 10:F3:28:EA:36:25:38:C5:1C:8A:38:FD:94:EF:F9:77:6B:97:E9:FA:60:18:D5:53:DD:5D:DA:15:88:4F:96:A1 (alt names: "DNS:m.geekwolf.github.io", "DNS:puppet", "DNS:puppet.geekwolf.github.io")
+</code></pre>
+
+<p><strong>参考文档：</strong> <a href="http://docs.puppetlabs.com/puppet/3.6/reference/config_ssl_external_ca.html#option-3-two-intermediate-cas-issued-by-one-root-ca">多CA配置</a></p>
+
+<p><strong><span id="ap8">6.测试</span></strong><br></p>
+
+<pre><code>默认agent（c1，c2）每30分钟连接到puppet master,为测试方便先修改连接时间
+echo "runinterval = 10" &gt;&gt;/etc/puppet/puppet.conf
+service puppet restart
+
+Puppet Master：
+vim /etc/puppet/manifests/site.pp
+file {"/tmp/test.txt" :
+  content=&gt;"test from geekwolf!~\n"; } 
+
+检查c1 c2是否有/tmp/test.txt文件
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[初认识Puppet]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/06/07/chu-ren-shi-puppet/"/>
+    <updated>2014-06-07T16:25:41+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/06/07/chu-ren-shi-puppet</id>
+    <content type="html"><![CDATA[<p><a href="#pp1">自动化运维都有哪些开源软件?</a><br>
+<a href="#pp2">什么是Puppet?</a><br>
+<a href="#pp3">Puppet都有哪些特性?</a><br>
+<a href="#pp4">Puppet适用于哪些场合?</a><br>
+<a href="#pp5">Puppet社区版和企业版本功能上有什么差别?</a><br>
+<a href="#pp6">Puppet支持哪些系统?</a><br>
+<a href="#pp7">Puppet架构是怎样的?</a><br>
+<a href="#pp8">Puppet如何工作的?</a><br>
+<a href="#pp9">Puppet组织结构是怎样的?</a><br>
+<a href="#pp10">学习Puppet去哪里?</a><br></p>
+
+<p><strong><span id="pp1">自动化运维都有哪些开源软件？</span></strong><br></p>
+
+<p>初始化：Kickstart、Cobbler、 Rpmbuild/Xen、Kvm、Lxc、Docker/Openstack、Cloudstack、Opennebula、Eucalyplus<br>
+配置类工具：Chef、Puppet、Func、Cfengine<br>
+命令和控制类工具: Fabric、Salstack、Ansible、Capistrano、Pssh、Dsh、Expect<br>
+监控类工具：Cacti、Nagios、Zabbix、Ganglia<br>
+推荐阅读：<a href="http://hotpu-meeting.b0.upaiyun.com/2014dtcc/post_pdf/liuyu.pdf">http://hotpu-meeting.b0.upaiyun.com/2014dtcc/post_pdf/liuyu.pdf</a><br></p>
+
+<!--more-->
+
+
+<p></p>
+
+<p><strong><span id="pp2">什么是Puppet？</span></strong><br>
+&emsp;&emsp;puppet是一种Linux、Unix平台的集中配置管理系统，使用ruby语言，可管理配置文件、用户、cron任务、软件包、系统服务等。puppet把这些系统实体称之为资源，puppet的设计目标是简化对这些资源的管理以及妥善处理资源间的依赖关系</p>
+
+<p><strong><span id="pp3">Puppet都有哪些特性？</span></strong></p>
+
+<ul>
+<li>可自动化重复任务、快速部署关键性应用及本地或者云端完成主动管理变更和快速扩展架构规模等</li>
+<li>遵循GPL协议，基于ruby开发，2.7.0以后使用Apache 2.0 License</li>
+<li>对于sa来讲是抽象的，只依赖于ruby与facter</li>
+<li>基于C/S架构，配置master和agent</li>
+<li>默认agent每30分钟连接到puppet master</li>
+<li>能管理多达40多种资源，如：file、user 、group、host、packeage、service、cron、exec、yumrepo等，适合整个软件生命周期的管理</li>
+</ul>
+
+
+<p><strong><span id="pp4">puppet的整个生命周期</span></strong><br>
+&emsp;&emsp;供应（provisioning:包安装）&mdash;>配置（configuration）&mdash;>联动(orchestration)&mdash;>报告(reporting)</p>
+
+<p><strong><span id="pp5">Puppet适用于哪些场合？</span></strong></p>
+
+<ul>
+<li>初始化配置、修复、升级、审计</li>
+<li>统一安装、配置管理软件</li>
+<li>统一配置系统优化参数</li>
+<li>定期检测服务是否运行</li>
+<li>快速替换集群时设备的角色</li>
+</ul>
+
+
+<p><strong><span id="pp6">Puppet社区版和企业版本功能上有什么差别？</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/puppet/cb.png" alt="" /></p>
+
+<p>请参考：<a href="http://puppetlabs.com/puppet/enterprise-vs-open-source">http://puppetlabs.com/puppet/enterprise-vs-open-source</a></p>
+
+<p><strong><span id="pp7">Puppet支持哪些系统？</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/puppet/zcos.png" alt="" /></p>
+
+<p><strong><span id="pp8">Puppet架构是怎样的？</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/puppet/ppjg.png" alt="" /></p>
+
+<p><strong><span id="pp9">Puppet如何工作的？</span></strong></p>
+
+<p><img src="http://geekwolf.github.io/images/puppet/yl.png" alt="" /></p>
+
+<p>&emsp;&emsp;所有配置信息为实现其通用性，在master端通常被定义为modules&mdash;class&mdash;resource（管理和被管理的对象）<br>
+&emsp;&emsp;资源组成类，类封装成模块<br>
+&emsp;&emsp;puppet只定义目标状态，不用关心实现过程；<br>
+module(class(resource))&mdash;>node &lsquo;FQDN&rsquo; {class1,class2}&mdash;>agent(facter)报告facter给master &mdash;>master根据facter信息生成相应的catalog结果&mdash;>agent 应用catalog<br></p>
+
+<p><strong>流程简述如下：</strong></p>
+
+<ol>
+<li>客户端puppetd向master发起认证请求。</li>
+<li>Puppet Master告诉client是合法的。</li>
+<li>客户端puppetd开始调用facter，facter可以探测出主机的一些变量，例如主机名，内存大小，IP地址等。pupppetd 把这些信息通过ssl连接发送到服务器端。</li>
+<li>服务器端的puppet Master 检测客户端的主机名，然后找到manifest里面对应的node配置， 并对该部分内容进行解析，解析分为几个阶段，语法检查，如果语法错误就报错。如果语法没错，就继续解析，解析的结果会生成一个中间的“伪代码”(catalog)，然后把伪代码发给客户端。</li>
+<li>客户端接收到“伪代码”，并且执行。</li>
+<li>客户端在执行时判断有没有file文件，如果有就向Fileserver发起请求。</li>
+<li>客户端继续判断有没有配置Report。如果配置，就把执行结果发送给服务器。</li>
+<li>服务器端把客户端的执行结果写入日志。并可以发送给报告系统(DashBoard)</li>
+</ol>
+
+
+<p><strong><span id="pp10">Puppet组织结构是怎样的？</span></strong><br></p>
+
+<p>Puppet的目录结构描述如下：
+|&mdash; puppet.conf           # 主配置配置文件<br>
+|&mdash; fileserver.conf       #文件服务器配置文件<br>
+|&mdash; auth.conf             #认证配置文件  (只允许域内认证)<br>
+|&mdash; autosign.conf         #自动验证配置文件<br>
+|&mdash; tagmail.conf          # 邮件配置文件（将错误信息发送）<br>
+|&mdash; manifests             # 文件存储目录(puppet会先读取该目录的.pp文件&lt;site.pp>)<br>
+|&mdash; nodes<br>
+| |  | puppetclient.pp   #puppet解析主配置文件所有的模块和节点都在此文件里include<br>
+| |&mdash; site.pp            # 定义puppet相关的变量和默认配置<br>
+| |&mdash; modules.pp         # 加载class类模块文件（include nginx）<br>
+|&mdash;  modules             # 定义模块<br>
+| &mdash;nginx                # 以nginx为例<br>
+|           |&mdash;  file<br>
+|           |&mdash;  manifests<br>
+|           |     |&mdash; init.pp       #类的定义，类名必须与模块名相同<br>
+|           |&mdash;&ndash; templates          # 模块配置目录，可以被模块的manifests引用<br>
+|           |     |&mdash; nginx.erb     #erb模板<br></p>
+
+<p><strong>学习Puppet去哪里？</strong></p>
+
+<p>Puppet相关文档：<a href="http://docs.puppetlabs.com/">http://docs.puppetlabs.com/</a><br>
+常用模块下载地址： <a href="https://forge.puppetlabs.com/">https://forge.puppetlabs.com/</a><br>
+PuppetDashboard下载地址：<a href="https://downloads.puppetlabs.com/dashboard/">https://downloads.puppetlabs.com/dashboard/</a><br>
+PuppetDashboard帮助文档：<a href="http://docs.puppetlabs.com/dashboard/">http://docs.puppetlabs.com/dashboard/</a><br>
+Puppet中文wiki：<a href="http://puppet.wikidot.com/">http://puppet.wikidot.com/</a><br>
+Puppet中文论坛：<a href="http://www.puppetfans.com/">http://www.puppetfans.com/</a><br>
+Puppet运维自动化文档：<a href="http://pan.baidu.com/s/1c0hBMgg">http://pan.baidu.com/s/1c0hBMgg</a><br>
+Puppet简单安装可以参考：<a href="http://www.chenshake.com/puppet-study-notes/#i-3">http://www.chenshake.com/puppet-study-notes/#i-3</a><br></p>
+
+<blockquote><p>参考 南非蜘蛛</p></blockquote>
+]]></content>
+  </entry>
+  
+</feed>
