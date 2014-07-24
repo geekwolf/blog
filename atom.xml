@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-07-24T13:54:44+08:00</updated>
+  <updated>2014-07-24T14:00:02+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -1641,8 +1641,9 @@ yum -y install perl-Time-HiRes</p>
 每个节点都做好mysql命令的软链 <br>
 ln -s /usr/local/mysql/bin/* /usr/local/bin/<br></p>
 
-<p><strong>问题4：</strong>
-![<a href="http://geekwolf.github.io/images/mysql/mhareadonly.png">http://geekwolf.github.io/images/mysql/mhareadonly.png</a>]</p>
+<p><strong>问题4：</strong></p>
+
+<p><img src="http://geekwolf.github.io/images/mysql/mhareadonly.png" alt="" /></p>
 
 <p><strong>参考文档：</strong></p>
 
