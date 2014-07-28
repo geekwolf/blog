@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-07-24T17:15:50+08:00</updated>
+  <updated>2014-07-28T11:22:24+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -12,6 +12,51 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[查看分区信息]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/07/28/cha-kan-fen-qu-xin-xi/"/>
+    <updated>2014-07-28T11:20:15+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/07/28/cha-kan-fen-qu-xin-xi</id>
+    <content type="html"><![CDATA[<p>查看Mysql里都有哪些数据库里面有什么分区表</p>
+
+<pre><code>SELECT 
+TABLE_SCHEMA, TABLE_NAME, PARTITION_NAME, PARTITION_COMMENT
+FROM
+INFORMATION_SCHEMA.PARTITIONS
+WHERE
+PARTITION_NAME IS NOT NULL;
+</code></pre>
+
+<!--more-->
+
+
+<p>
+查看某个分区表都有哪些分区及使用情况</p>
+
+<pre><code>USE LOCKLOG;
+SELECT 
+partition_name part,
+partition_expression expr,
+partition_description descr,
+table_rows
+FROM
+INFORMATION_SCHEMA.partitions
+WHERE
+TABLE_SCHEMA = schema()
+AND TABLE_NAME = 'lock_log';
+</code></pre>
+
+<p>查看分区表lock_log的创建sql及分区类型</p>
+
+<pre><code> SHOW CREATE TABLE lock_log \G;
+</code></pre>
+
+<p>其他分区操作和管理请参考：</p>
+
+<blockquote><p><a href="http://www.simlinux.com/blog/2014/02/28/mysqlfen-qu-guan-li/">http://www.simlinux.com/blog/2014/02/28/mysqlfen-qu-guan-li/</a></p></blockquote>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[IO调度算法适用场景]]></title>
@@ -2286,8 +2331,7 @@ mysql&gt;? create table
 <!--more-->
 
 
-<p>
- <strong>注：</strong>在Mysql启动时如果在my.cnf设置了event_scheduler=ON（OFF or 1 or 0）时，就不能在运行时修改撑DISABLED，如果设置event_scheduler=DISABLED时，就不能在运行时修改其值为ON （ OFF or 1 or 0）<br></p>
+<blockquote><p> <strong>注：</strong>在Mysql启动时如果在my.cnf设置了event_scheduler=ON（OFF or 1 or 0）时，就不能在运行时修改撑DISABLED，如果设置event_scheduler=DISABLED时，就不能在运行时修改其值为ON （ OFF or 1 or 0）<br></p></blockquote>
 
 <pre><code>mysql&gt; SELECT @@event_scheduler;
 +-------------------+
