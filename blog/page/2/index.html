@@ -74,6 +74,62 @@
       
   <header>
     
+      <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/04/08/mysqlzhi-chi-de-shu-ju-lei-xing/">Mysql支持的数据类型</a></h4>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-08T19:36:14+08:00" pubdate data-updated="true">Apr 8<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h5>一、数值类型</h5>
+
+<p><img src="/images/mysql/numbers.png" alt="" /></p>
+
+<p><strong>注意事项：</strong><br>
+<strong>1. int类型里面默认的数据宽度是11，即int(11)</strong><br>
+&emsp;关于zerofill，在数字位数不够的空间用字符0填充<br>
+&emsp;例如：</p>
+
+<p><img src="/images/mysql/n2.png" alt="" /></p>
+
+<p><strong>2.整数类型有AUTO_INCREMENT的属性</strong><br>
+&emsp;AUTO_INCREMENT的值一般从1开始，每行增加1，插入NULL到一个AUTO_INCREMENT列时，Mysql插入一个比该列中当前最大值大1的值<br>
+&emsp;一个表中最多只能有一个AUTO_INCREMENT列<br>
+&emsp;使用AUTO_INCREMENT的条件：<br>
+&emsp;该列应该定义为NOT NULL，并且为PRIMARY KEY 或者UNIQUE键<br></p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/04/08/mysqlzhi-chi-de-shu-ju-lei-xing/">继续阅读 &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h4 class="entry-title" ><a  style="text-decoration:none;font-size:0.8em" href="/blog/2014/04/04/sqlji-chu-cao-zuo-zong-jie/">Sql基础操作总结</a></h4>
     
     
@@ -408,6 +464,10 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/07/29/16ge-hen-you-yong-de-zai-xian-gong-ju/">16个很有用的在线工具</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/07/28/cha-kan-fen-qu-xin-xi/">查看分区信息</a>
       </li>
     
@@ -423,15 +483,11 @@ B+树的插入必须保证插入后叶节点的记录依然排序。同时要考
         <a href="/blog/2014/06/12/mysql5-dot-6ji-yu-gtidfu-zhi-pei-zhi/">MySQL5.6基于GTID复制配置</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/06/07/chu-ren-shi-puppet/">初认识Puppet</a>
-      </li>
-    
   </ul>
 </section>
 <section>
     <h2>文章归档</h2>
-    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (12)</a></li><li><a href='/blog/categories/自动化运维'>自动化运维 (2)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/infobright数据仓库'>Infobright数据仓库 (1)</a></li><li><a href='/blog/categories/linux运维'>Linux运维 (1)</a></li><li><a href='/blog/categories/mysql数据库'>Mysql数据库 (12)</a></li><li><a href='/blog/categories/自动化运维'>自动化运维 (2)</a></li></ul>
 </section>
 <section>
   <h2>最新评论</h2>

@@ -4,7 +4,7 @@
   <title><![CDATA[Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-07-28T11:26:57+08:00</updated>
+  <updated>2014-07-29T17:19:34+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -12,6 +12,88 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[16个很有用的在线工具]]></title>
+    <link href="http://geekwolf.github.io/blog/2014/07/29/16ge-hen-you-yong-de-zai-xian-gong-ju/"/>
+    <updated>2014-07-29T16:54:27+08:00</updated>
+    <id>http://geekwolf.github.io/blog/2014/07/29/16ge-hen-you-yong-de-zai-xian-gong-ju</id>
+    <content type="html"><![CDATA[<p> <strong>1. <a href="http://ExplainShell.com">ExplainShell.com</a> 命令解释</strong>
+ <img src="http://simlinux.com/images/otools/explainshell.jpg" alt="explainshell" />
+&emsp;&emsp;对于Linux用户来说每天都会写各种命令和脚本，那么你可以使用这个网站工具来查看命令式如何工作的,这样可以避免不必要的错误出现；也是一个很好的学习命令的方式</p>
+
+<!--more-->
+
+
+<p>   <br/>
+ <strong>2. <a href="http:/BashrcGenerator.com/">BashrcGenerator.com</a> 定制个性命令提示符</strong>
+ <img src="http://simlinux.com/images/otools/generator.jpg" alt="BashrcGenerator" />
+&emsp;&emsp;简单说就是个性化生成命令提示符，可将生成的代码写入到用户家目录的.bashrc或者可以设置全局变量文件/etc/profile对所有用户生效<br>
+&emsp;&emsp;可参考：<a href="http://stackoverflow.com/questions/4133904/ps1-line-with-git-current-branch-and-colors">http://stackoverflow.com/questions/4133904/ps1-line-with-git-current-branch-and-colors</a></p>
+
+<p> <strong>3. <a href="http://Vim-adventures.com">Vim-adventures.com</a> 通过RPG游戏练习VIM使用</strong>
+ <img src="http://simlinux.com/images/otools/vim.jpg" alt="Vim-adventures" />
+ &emsp;&emsp;通过RPG游戏练习VIM编辑器的使用，使用h,j,k,l字符移动人物来获得新的命令能力和搜集钥匙，查看帮助可使用:help;赶脚这个非常cool!</p>
+
+<p> <strong>4. <a href="https://try.github.io/levels/1/challenges/2">Try Github</a> 在线学习Git版本控制</strong>
+ <img src="http://simlinux.com/images/otools/trygit.jpg" alt="Try Github" /></p>
+
+<p> &emsp;&emsp;十五分钟学会Git，很明显这个网站模拟了一个控制台，以很时尚的界面让人对Git不再望而生畏</p>
+
+<p> <strong>5. <a href="http://Shortcutfoo.com">Shortcutfoo.com</a></strong>
+ <img src="http://simlinux.com/images/otools/shortcutfoo.jpg" alt="Shortcutfoo.com" />
+  &emsp;&emsp;是一个练习快捷键的好地方，涵盖了vim、sublime、emacs、git等软件的快捷使用方式和友好的说明</p>
+
+<p> <strong>6. <a href="https://github.com/geekwolf/free-programming-books">GitHub Free Programming Books</a> 免费编程书籍</strong>
+ <img src="http://simlinux.com/images/otools/freebooks.jpg" alt="GitHub Free Programming Books" />
+ &emsp;&emsp;以Github管理的方式搜集了免费的编程和系统管理等书籍，给作者点1024个赞~~，另外连接是fork原作者，后续增加中文书籍</p>
+
+<p> <strong>7. <a href="http://Collabedit.com">Collabedit.com</a> 实时文本交互聊天</strong>
+ <img src="http://simlinux.com/images/otools/coolabedit.jpg" alt="Collabedit.com" />
+ &emsp;&emsp;先说下使用，你可以创建一个文档<a href="http://collabedit.com/yb22u%E5%A1%AB%E5%86%99%E7%9B%B8%E5%85%B3%E7%9A%84%E7%94%A8%E6%88%B7%E5%90%8D%E5%92%8C%E9%80%89%E6%8B%A9%E8%AF%AD%E8%A8%80%EF%BC%9B%E7%84%B6%E5%90%8E%E5%8F%AF%E4%BB%A5%E5%B0%86%E6%AD%A4%E6%96%87%E6%A1%A3%E5%9C%B0%E5%9D%80%E5%8F%91%E7%BB%99%E5%8F%A6%E4%B8%80%E4%B8%AA%E4%BA%BA%EF%BC%8C%E9%82%A3%E4%B9%88%E4%BA%92%E7%9B%B8%E4%B9%8B%E9%97%B4%E5%B0%B1%E5%8F%AF%E4%BB%A5%E5%AE%9E%E6%97%B6%E7%9C%8B%E5%88%B0%E5%AF%B9%E6%96%B9%E7%9A%84%E8%BE%93%E5%85%A5%EF%BC%8C%E6%9C%89%E9%AB%98%E4%BA%AE%E8%AF%AD%E6%B3%95%EF%BC%9B%E4%BD%BF%E7%94%A8%E5%9C%BA%E5%90%88%E5%98%9B%EF%BC%8C%E6%AF%94%E5%A6%82%E9%80%9A%E8%BF%87collabedit%E5%8F%AF%E4%BB%A5%E8%80%83%E9%87%8F%E5%AF%B9%E6%96%B9%E7%BC%96%E7%A8%8B%E8%83%BD%E5%8A%9B%E7%AD%89">http://collabedit.com/yb22u%E5%A1%AB%E5%86%99%E7%9B%B8%E5%85%B3%E7%9A%84%E7%94%A8%E6%88%B7%E5%90%8D%E5%92%8C%E9%80%89%E6%8B%A9%E8%AF%AD%E8%A8%80%EF%BC%9B%E7%84%B6%E5%90%8E%E5%8F%AF%E4%BB%A5%E5%B0%86%E6%AD%A4%E6%96%87%E6%A1%A3%E5%9C%B0%E5%9D%80%E5%8F%91%E7%BB%99%E5%8F%A6%E4%B8%80%E4%B8%AA%E4%BA%BA%EF%BC%8C%E9%82%A3%E4%B9%88%E4%BA%92%E7%9B%B8%E4%B9%8B%E9%97%B4%E5%B0%B1%E5%8F%AF%E4%BB%A5%E5%AE%9E%E6%97%B6%E7%9C%8B%E5%88%B0%E5%AF%B9%E6%96%B9%E7%9A%84%E8%BE%93%E5%85%A5%EF%BC%8C%E6%9C%89%E9%AB%98%E4%BA%AE%E8%AF%AD%E6%B3%95%EF%BC%9B%E4%BD%BF%E7%94%A8%E5%9C%BA%E5%90%88%E5%98%9B%EF%BC%8C%E6%AF%94%E5%A6%82%E9%80%9A%E8%BF%87collabedit%E5%8F%AF%E4%BB%A5%E8%80%83%E9%87%8F%E5%AF%B9%E6%96%B9%E7%BC%96%E7%A8%8B%E8%83%BD%E5%8A%9B%E7%AD%89</a></p>
+
+<p> <strong>8. <a href="http://Cpp.sh">Cpp.sh</a> 在线编写运行分享C++代码编辑器</strong>
+ <img src="http://simlinux.com/images/otools/cpp.jpg" alt="Cpp.sh" />
+ &emsp;&emsp;可在线编辑运行C++代码，亦可Ctrl+Z生成url分享给好友</p>
+
+<p> <strong>9. <a href="http://copy.sh/v24/">Copy.sh</a> 浏览器运行虚拟机</strong>
+ <img src="http://simlinux.com/images/otools/copy.jpg" alt="Copy.sh" />
+ &emsp;&emsp;又一个非常crazy的工具，在线运行虚拟机，可以选择下载虚拟机镜像也可以上传自己的iso，copy.sh在线运行虚拟机源码：<a href="https://github.com/copy/v86">https://github.com/copy/v86</a>；</p>
+
+<p> <strong>10. <a href="http://Commandlinefu.com">Commandlinefu.com</a> 命令或记录网站</strong>
+ <img src="http://simlinux.com/images/otools/commandlinefu.jpg" alt="Commandlinefu.com" />
+ &emsp;&emsp;做运维的应该都知道这个网站，可以分享自己的CLI库，也可以学习借鉴别人的命令脚本</p>
+
+<p> <strong>11.  <a href="http://Alias.sh">Alias.sh</a> 命令别名数据库</strong>
+ <img src="http://simlinux.com/images/otools/alias.jpg" alt="Alias.sh" />
+ &emsp;&emsp;有点类似commandlinefu了，可以通过这个网站借鉴获取和分享有用的命令别名<br>
+&emsp;&emsp;比如lr别名定义了显示目录树</p>
+
+<pre><code>alias lr='ls -R | grep ":$" | sed -e '\''s/:$//'\'' -e '\''s/[^-][^\/]*\//--/g'\'' -e '\''s/^/   /'\'' -e '\''s/-/|/'\'''
+</code></pre>
+
+<p> <strong>12. <a href="http://Distrowatch.com">Distrowatch.com</a>  提供了Linux发行版的详细信息</strong>
+ <img src="http://simlinux.com/images/otools/distrowatch.jpg" alt="Distrowatch.com" />
+ &emsp;&emsp;通过Distrowath不仅可以精确的查看互联网都有哪些流行的Linux发行版，还可以查看每个发行版的相关信息如默认桌面环境、默认应用程序及镜像的下载链接；堪称Linux的数据库</p>
+
+<p> <strong>13. <a href="http://Linuxmanpages.com">Linuxmanpages.com</a> 在线查看命令帮助</strong>
+ <img src="http://simlinux.com/images/otools/manpages.jpg" alt="Linuxmanpages.com" />
+ &emsp;&emsp;相当于系统内部的man、help、info等的综合吧</p>
+
+<p> <strong>14. <a href="http://AwesomeCow.com">AwesomeCow.com</a> 适用Linux环境的软件搜索引擎</strong>
+ <img src="http://simlinux.com/images/otools/awe.jpg" alt="AwesomeCow.com" />
+ &emsp;&emsp;如果有款win下好用的软件想在linux下使用，或许可以通过AwesomeCow找到与其类似或者一样的软件，或者通过WINE</p>
+
+<p> <strong>15. <a href="http://PenguSpy.com">PenguSpy.com</a> Linux好玩游戏合集</strong>
+ <img src="http://simlinux.com/images/otools/pengu.jpg" alt="PenguSpy.com" /></p>
+
+<p> <strong>16. <a href="http://lxr.free-electrons.com/">Linux Cross Reference by Free Electrons</a> 在线查看内核代码及不同版本的差异</strong>
+ <img src="http://simlinux.com/images/otools/cross.jpg" alt="Linux Cross Reference by Free Electrons" />
+ &emsp;&emsp;对于内核开发者或许有很大的帮助</p>
+
+<blockquote><p>翻译自 <a href="http://xmodulo.com/2014/07/useful-online-tools-linux.html">http://xmodulo.com/2014/07/useful-online-tools-linux.html</a></p></blockquote>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[查看分区信息]]></title>
