@@ -99,97 +99,14 @@
 
   <div class="entry-content"><p><strong>一、配置网络</strong><br>
 &emsp;&emsp;在使用Vmware Workstation10.2测试过程中，发现可能部分物理机100M网卡不能正常识别，换到了1000M网卡上测试能正常识别虚拟网卡<br>
-&emsp;&emsp;Centos7系统的网卡设备命名有所变化，可参考<a href="http://www.pubyun.com/blog/deveops/centos-7%E4%B8%8B%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E5%91%BD%E5%90%8D/">CentOS 7下网络设备命名</a>，个人感觉既然学习新系统，完全没必要换成传统的识别名方式，要勇于接受新知识~<br>
-1.通过编辑文件修改网络配置<br></p>
+&emsp;&emsp;Centos7系统的网卡设备命名有所变化，可参考<a href="http://www.pubyun.com/blog/deveops/centos-7%E4%B8%8B%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E5%91%BD%E5%90%8D/">CentOS 7下网络设备命名</a>，个人感觉既然学习新系统，完全没必要换成传统的识别名方式，要勇于接受新知识~<br></p>
 
-<pre><code>vim   /etc/sysconfig/network-scripts/ifcfg-eno16777736
-HWADDR=00:0c:29:14:34:51
-TYPE=Ethernet
-BOOTPROTO=static
-DEFROUTE=yes
-PEERDNS=yes
-PEERROUTES=yes
-USERCTL=no
-NM_CONTROLLED=no
-IPV4_FAILURE_FATAL=no
-IPV6INIT=yes
-IPV6_AUTOCONF=yes
-IPV6_DEFROUTE=yes
-IPV6_PEERDNS=yes
-IPV6_PEERROUTES=yes
-IPV6_FAILURE_FATAL=no
-NAME=eno16777736
-ONBOOT=yes
-IPADDR=192.168.117.128
-NETMASK=255.255.255.0
-GATEWAY=192.168.117.2
-DNS1=192.168.117.2
-</code></pre>
-
-<p>关键配置：<br></p>
-
-<pre><code>TYPE=Ethernet
-BOOTPROTO=static
-NAME=eno16777736
-ONBOOT=yes
-IPADDR=192.168.117.128
-NETMASK=255.255.255.0
-GATEWAY=192.168.117.2
-DNS1=192.168.117.2
-
-cat /etc/resolv.conf
-nameserver 192.168.117.2
-</code></pre>
-
-<p>2.通过文本工具nmtui修改网络配置(RHEL7/CentOS7默认安装,前提需要开启NetworkManager.service才可以使用)<br></p>
-
-<pre><code>yum -y install NetworkManager-tui
-nmtui-edit eno16777736  修改网卡配置
-nmtui-connect eno16777736
-</code></pre>
-
-<p>重启网络<br></p>
-
-<pre><code>systemctl  restart network
-systemctl  status network
-</code></pre>
-
-<p>修改主机名：<br></p>
-
-<pre><code>vim /etc/hostname
-centos7.simlinux.com
-</code></pre>
-
-<p>退出重新登录即可生效</p>
-
-<p><strong>二、关闭不必要的服务</strong><br></p>
-
-<p>&emsp;&emsp;最小化安装的Centos7系统并没有nano、vim、wget、curl、ifconfig、lsof命令，这里首先安装一下：<br></p>
-
-<p><code>yum  -y install nano vim wget curl net-tools lsof
-</code><br></p>
-
-<p>&emsp;&emsp;可以通过netstat和lsof查看系统都运行了哪些服务，将不必要的进行关闭<br></p>
-
-<pre><code>systemctl stop postfix
-systemctl stop avahi-daemon
-systemctl disable postfix
-systemctl disable avahi-daemon
-systemctl list-unit-files    查看正在运行服务的状态报告
-systemctl start httpd.service    启动服务
-systemctl stop  httpd.service    关闭服务
-systemctl restart  httpd.service 重启服务
-systemctl reload   httpd.service 重新加载服务
-systemctl disable  httpd.service 开机不启动
-systemctl enable   httpd.service 开机启动
-systemctl status   httpd.service 查看服务运行状态
-systemctl show     httpd.service 显示服务或任务的属性
-systemctl list-dependencies  httpd.service  检查服务依赖关系
-systemctl is-enabled  httpd.service  检查服务是否开机启动及级别
-systemctl -H 192.168.117.128 start httpd.service   启动192.168.117.128机器上的httpd服务
-</code></pre>
 </div>
   
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/08/12/centos7wang-luo-pei-zhi-he-fu-wu-guan-li/">继续阅读 &rarr;</a>
+    </footer>
   
 
 

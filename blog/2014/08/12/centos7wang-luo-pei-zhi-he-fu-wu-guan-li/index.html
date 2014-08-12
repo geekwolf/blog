@@ -96,8 +96,14 @@
 
 <div class="entry-content"><p><strong>一、配置网络</strong><br>
 &emsp;&emsp;在使用Vmware Workstation10.2测试过程中，发现可能部分物理机100M网卡不能正常识别，换到了1000M网卡上测试能正常识别虚拟网卡<br>
-&emsp;&emsp;Centos7系统的网卡设备命名有所变化，可参考<a href="http://www.pubyun.com/blog/deveops/centos-7%E4%B8%8B%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E5%91%BD%E5%90%8D/">CentOS 7下网络设备命名</a>，个人感觉既然学习新系统，完全没必要换成传统的识别名方式，要勇于接受新知识~<br>
-1.通过编辑文件修改网络配置<br></p>
+&emsp;&emsp;Centos7系统的网卡设备命名有所变化，可参考<a href="http://www.pubyun.com/blog/deveops/centos-7%E4%B8%8B%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E5%91%BD%E5%90%8D/">CentOS 7下网络设备命名</a>，个人感觉既然学习新系统，完全没必要换成传统的识别名方式，要勇于接受新知识~<br></p>
+
+<!--more-->
+
+
+<p></p>
+
+<p>1.通过编辑文件修改网络配置<br></p>
 
 <pre><code>vim   /etc/sysconfig/network-scripts/ifcfg-eno16777736
 HWADDR=00:0c:29:14:34:51
