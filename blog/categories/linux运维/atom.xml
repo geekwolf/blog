@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Linux运维 | Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/blog/categories/linux运维/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-08-12T15:32:05+08:00</updated>
+  <updated>2014-08-12T15:40:39+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -18,13 +18,12 @@
     <link href="http://geekwolf.github.io/blog/2014/08/12/centos7wang-luo-pei-zhi-he-fu-wu-guan-li/"/>
     <updated>2014-08-12T15:21:41+08:00</updated>
     <id>http://geekwolf.github.io/blog/2014/08/12/centos7wang-luo-pei-zhi-he-fu-wu-guan-li</id>
-    <content type="html"><![CDATA[<p><strong>一、配置网络</strong>
+    <content type="html"><![CDATA[<p><strong>一、配置网络</strong><br>
 &emsp;&emsp;在使用Vmware Workstation10.2测试过程中，发现可能部分物理机100M网卡不能正常识别，换到了1000M网卡上测试能正常识别虚拟网卡<br>
-&emsp;&emsp;Centos7系统的网卡设备命名有所变化，可参考<a href="http://www.pubyun.com/blog/deveops/centos-7%E4%B8%8B%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E5%91%BD%E5%90%8D/">CentOS 7下网络设备命名</a>，个人感觉既然学习新系统，完全没必要换成传统的识别名方式，要勇于接受新知识~<br></p>
+&emsp;&emsp;Centos7系统的网卡设备命名有所变化，可参考<a href="http://www.pubyun.com/blog/deveops/centos-7%E4%B8%8B%E7%BD%91%E7%BB%9C%E8%AE%BE%E5%A4%87%E5%91%BD%E5%90%8D/">CentOS 7下网络设备命名</a>，个人感觉既然学习新系统，完全没必要换成传统的识别名方式，要勇于接受新知识~<br>
+1.通过编辑文件修改网络配置<br></p>
 
-<pre><code>1.通过编辑文件修改网络配置&lt;br&gt;
-
-vim   /etc/sysconfig/network-scripts/ifcfg-eno16777736
+<pre><code>vim   /etc/sysconfig/network-scripts/ifcfg-eno16777736
 HWADDR=00:0c:29:14:34:51
 TYPE=Ethernet
 BOOTPROTO=static
@@ -86,9 +85,12 @@ centos7.simlinux.com
 
 <p><strong>二、关闭不必要的服务</strong><br></p>
 
-<p>&emsp;&emsp;最小化安装的Centos7系统并没有nano、vim、wget、curl、ifconfig、lsof命令，这里首先安装一下：<br>
-<code>yum  -y install nano vim wget curl net-tools lsof
-</code>&emsp;&emsp;可以通过netstat和lsof查看系统都运行了哪些服务，将不必要的进行关闭<br></p>
+<p>&emsp;&emsp;最小化安装的Centos7系统并没有nano、vim、wget、curl、ifconfig、lsof命令，这里首先安装一下：<br></p>
+
+<p><code>yum  -y install nano vim wget curl net-tools lsof
+</code><br></p>
+
+<p>&emsp;&emsp;可以通过netstat和lsof查看系统都运行了哪些服务，将不必要的进行关闭<br></p>
 
 <pre><code>systemctl stop postfix
 systemctl stop avahi-daemon
