@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Infobright数据仓库安装及参数优化 - Geekwolf's Blog</title>
+  <title>开源Linux监控系统:Icinga - Geekwolf's Blog</title>
   <meta name="author" content="Geekwolf">
 
   
-  <meta name="description" content="infobright安装部署及参数调整优化">
-  <meta name="keywords" content="infobright,数据仓库,warehouse">
+  <meta name="description" content="开源Linux监控系统:Icinga">
+  <meta name="keywords" content="icinga,icinga2,nagios">
 
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua">
+  <link rel="canonical" href="http://geekwolf.github.io/blog/2014/08/15/kai-yuan-linuxjian-kong-xi-tong-icinga">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Geekwolf's Blog" type="application/atom+xml">
@@ -71,7 +71,7 @@
 
   <header>
     
-      <h4 class="entry-title" align="center">Infobright数据仓库安装及参数优化</h4>
+      <h4 class="entry-title" align="center">开源Linux监控系统:Icinga</h4>
     
     
       <p class="meta">
@@ -87,72 +87,86 @@
   
 
 
-<time datetime="2014-02-28T20:30:10+08:00" pubdate data-updated="true">Feb 28<span>th</span>, 2014</time>
+<time datetime="2014-08-15T18:17:34+08:00" pubdate data-updated="true">Aug 15<span>th</span>, 2014</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><h5>一、认知Infobright数据仓库</h5>
-
-<ol>
-<li>Infobright是开源的DATA Warehouse，可以作为Mysql的存储引擎（BRIGHTHOUSE）使用，select查询与Mysql无区别</li>
-<li>适用于基于Mysql架构下的OLAP，区分为ICE（社区版免费）和IEE（企业版商业授权）</li>
-<li>千万级的查询性能比MyISAM、InnoDB等快5-60倍，且数据量很大时，查询性能基本在同一个数量级，适合聚合查询（SUM,COUNT，AVG，GROUP BY）</li>
-<li>列式存储，无需建索引和分区，高压缩比40:1（官方数字）</li>
-<li>ICE和IEE版本的区别和限制<br>
-<a href="https://www.infobright.org/index.php/Learn-More/ICE_IEE_Comparison/">https://www.infobright.org/index.php/Learn-More/ICE_IEE_Comparison/</a></li>
-</ol>
-
-
-<h5>二、Infobright基本安装初始化</h5>
-
-<pre><code> wget http://www.infobright.org/downloads/ice/infobright-4.0.7-0-x86_64-ice.rpm
- rpm -ivh infobright-4.0.7-0-x86_64-ice.rpm --prefix=/usr/local/
-
- A.初始化数据库：
- /usr/local/infobright/scripts/mysql_install_db --datadir=/data/data/ --basedir=/usr/local/infobright-4.0.7-x86_64/ --force
-   安装之后会生成
-  /etc/my-ib.cnf.inactive （主配置文件，下面两个暂不讨论）
-</code></pre>
+<div class="entry-content"><p>&emsp;&emsp;其实Icinga是Nagios监控的一个分支，有两个分支版本Icinga1和Icinga2；Icinga除了完全兼容Nagios的插件和扩展甚至配置文件，在web接口和报告上有很大的改进，并且简化了插件的开发；Icinga1和Nagios的基础监控类似，增加了一些新的特性和修复了Nagios的一些bug<br>
+&emsp;&emsp;详细可参考：<a href="https://www.icinga.org/icinga/icinga-1/features/">https://www.icinga.org/icinga/icinga-1/features/</a><br>
+&emsp;&emsp;&emsp;&emsp;<a href="https://www.icinga.org/icinga/icinga-2/architecture/">https://www.icinga.org/icinga/icinga-2/architecture/</a>
+下面基于Centos7来安装Icinga1：</p>
 
 <!--more-->
 
 
-<pre><code>  /etc/my-ib-master.cnf
-  /etc/my-ib-slave.cnf
-  /etc/rc.d/init.d/mysqld-ib（启动脚本）
-  mv  /etc/my-ib.cnf.inactive /etc/my-ib.cnf
-  修改/etc/rc.d/init.d/mysqld-ib /etc/my-ib.cnf  的datadir basedir参数到指定位置
-  修改权限chown mysql.mysql /etc/my-ib*  /data/data /ibcache/cachedata
+<p> <br/>
+<strong>一、安装LAMP环境<br></strong>
+<strong>1.安装apache和php <br></strong>
+ yum -y install httpd php php-pear php-xmlrpc php-xsl php-soap php-mysql php-pdo  php-gd php-mbstring</p>
 
- B.修改warehouse引擎配置文件
-  /data/data/brighthouse.ini
+<p>防火墙放行httpd服务
+firewall-cmd &mdash;add-service=http (临时放行)
+firewall-cmd &mdash;permanent &mdash;add-service=http（永久放行，写入配置文件，系统重启后依然有效）</p>
 
- C.参数优化
-   CacheFolder = /ibcache/cachedata/
-   ServerMainHeapSize = 28000
-   ServerCompressedHeapSize = 4000
-   LoaderMainHeapSize = 800
-   ControlMessages = 3
-   KNFolder = BH_RSI_Repository
-   AllowMySQLQueryPath = 0
+<p>systemctl start http.service</p>
+
+<pre><code>vim /var/www/html/info.php
+&lt;?php
+    phpinfo();
+?&gt;
+&lt;br&gt;
+测试php解析是否正常
+vim /etc/php.ini
+date.timezone= PRC
 </code></pre>
 
-<p><strong>注释：</strong><br>
-CacheFolder 临时数据目录，用于缓存处理查询的中间结果集，与Datadir相异为宜，可用空间大于20G<br>
-ServerMainHeapSize IB主线程内存，一般设置为物理内存一半；若可能尽量增加<br>
-ServerCompressedHeapSize  服务进程的压缩堆栈空间，存放压缩数据<br>
-LoaderMainHeapSize Bhloader数据导入缓冲区，随目标表的列数增加而调整，loader进程的堆栈空间，一般最大不超过800M<br>
-ControlMessages  控制盒查询日志的信息量级别（1-3之间）<br>
-KNFolder  知识网络目录，默认在datadir目录下<br>
-AllowMySQLQueryPath  是否支持Mysql原生的SQL查询，支持修改为1，否则0<br>
-启动infobright：service mysqld-ib start</p>
+<p><strong>2.安装Mariadb</strong></p>
 
-<p><strong>ICE版本导入数据方式：<br></strong>
-BRIGHTHOUSE<br>
-load data infile &lsquo;/data/data.txt&rsquo; into table t fields terminated by &lsquo; &rsquo;;</p>
+<pre><code>yum -y install mariadb-server mariadb
+mysql_secure_installation
+systemctl start mariadb
+systemctl status mariadb
+</code></pre>
+
+<p><strong>二、安装icinga监控工具</strong></p>
+
+<pre><code>wget http://packages.icinga.org/epel/ICINGA-release.repo -O /etc/yum.repod/icinga.repo
+rpm --import http://packages.icinga.org/icinga.key
+yum  -y install icinga icinga-doc icinga-gui
+htpasswd -cm /etc/icinga/passwd  geekwolf
+systemctl start icinga
+systemctl start httpd
+</code></pre>
+
+<p><strong>三、安装Nagios插件</strong></p>
+
+<pre><code>   rpm -Uvh http://ftp.ines.lug.ro/fedora/epel/beta/7/x86_64/epel-release-7-0.2.noarch.rpm
+   yum -y install nagios-plugins nagios-plugins-all
+   配置文件路径/etc/icinga，配置方式和nagios一样
+
+
+   vim  /etc/icinga/cgi.cfg
+   authorized_for_system_information=geekwolf
+   authorized_for_configuration_information=geekwolf
+   authorized_for_full_command_resolution=geekwolf
+   authorized_for_system_commands=geekwolf
+   authorized_for_all_services=geekwolf
+   authorized_for_all_hosts=geekwolf
+   authorized_for_all_service_commands=geekwolf
+   authorized_for_all_host_commands=geekwolf
+</code></pre>
+
+<p>访问Web:<a href="http://192.168.117.129/icinga">http://192.168.117.129/icinga</a>
+<img src="http://geekwolf.github.io/images/articles/icingam.png" alt="" /></p>
+
+<p><strong>相关资源</strong>：</p>
+
+<blockquote><p><a href="http://docs.icinga.org/">Icinga官方文档</a> :<a href="http://docs.icinga.org">http://docs.icinga.org</a><br>
+<a href="http://packages.icinga.org/epel/">Icinga EPEL</a> :<a href="http://packages.icinga.org/epel">http://packages.icinga.org/epel</a><br>
+<a href="https://www.icinga.org/download">Icinga安装包及vagrant box下载</a> ：<a href="https://www.icinga.org/download">https://www.icinga.org/download</a></p></blockquote>
 </div>
 
 
@@ -175,12 +189,12 @@ load data infile &lsquo;/data/data.txt&rsquo; into table t fields terminated by 
   
 
 
-<time datetime="2014-02-28T20:30:10+08:00" pubdate data-updated="true">Feb 28<span>th</span>, 2014</time>
+<time datetime="2014-08-15T18:17:34+08:00" pubdate data-updated="true">Aug 15<span>th</span>, 2014</time>
 
 
 <span class="categories" >
   
-    <a class='category' href='/blog/categories/infobright数据仓库/'>Infobright数据仓库</a>
+    <a class='category' href='/blog/categories/linux运维/'>Linux运维</a>
   
 </span>
 
@@ -210,7 +224,7 @@ var jiathis_config = {data_track_clickback:'true'};
 
 <!--
  
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/" data-via="" data-counturl="http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://geekwolf.github.io/blog/2014/08/15/kai-yuan-linuxjian-kong-xi-tong-icinga/" data-via="" data-counturl="http://geekwolf.github.io/blog/2014/08/15/kai-yuan-linuxjian-kong-xi-tong-icinga/" >Tweet</a>
 -->
   
   
@@ -222,10 +236,8 @@ var jiathis_config = {data_track_clickback:'true'};
 
 <p class="meta">
 
-<a class="basic-alignment left" href="/blog/2014/02/28/mysqlfen-qu-guan-li/" title="Previous Post: Mysql分区管理">&laquo; Mysql分区管理</a>
+<a class="basic-alignment left" href="/blog/2014/08/12/centos7wang-luo-pei-zhi-he-fu-wu-guan-li/" title="Previous Post: CentOS7网络配置和服务管理">&laquo; CentOS7网络配置和服务管理</a>
 
-
-<a class="basic-alignment right" href="/blog/2014/03/17/innodbsuo-yin-yuan-li-he-b-plus-shu/" title="Next Post: Innodb索引原理和B+树">Innodb索引原理和B+树 &raquo;</a>
 
 </p>
 </footer>
@@ -336,8 +348,8 @@ var jiathis_config = {data_track_clickback:'true'};
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/';
-        var disqus_url = 'http://geekwolf.github.io/blog/2014/02/28/infobrightshu-ju-cang-ku-an-zhuang-ji-can-shu-you-hua/';
+        var disqus_identifier = 'http://geekwolf.github.io/blog/2014/08/15/kai-yuan-linuxjian-kong-xi-tong-icinga/';
+        var disqus_url = 'http://geekwolf.github.io/blog/2014/08/15/kai-yuan-linuxjian-kong-xi-tong-icinga/';
         var disqus_script = 'embed.js';
       
     (function () {
