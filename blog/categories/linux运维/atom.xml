@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Linux运维 | Geekwolf's Blog]]></title>
   <link href="http://geekwolf.github.io/blog/categories/linux运维/atom.xml" rel="self"/>
   <link href="http://geekwolf.github.io/"/>
-  <updated>2014-08-15T18:26:21+08:00</updated>
+  <updated>2014-08-15T18:29:39+08:00</updated>
   <id>http://geekwolf.github.io/</id>
   <author>
     <name><![CDATA[Geekwolf]]></name>
@@ -19,7 +19,7 @@
     <updated>2014-08-15T18:17:34+08:00</updated>
     <id>http://geekwolf.github.io/blog/2014/08/15/kai-yuan-linuxjian-kong-xi-tong-icinga</id>
     <content type="html"><![CDATA[<p>&emsp;&emsp;其实Icinga是Nagios监控的一个分支，有两个分支版本Icinga1和Icinga2；Icinga除了完全兼容Nagios的插件和扩展甚至配置文件，在web接口和报告上有很大的改进，并且简化了插件的开发；Icinga1和Nagios的基础监控类似，增加了一些新的特性和修复了Nagios的一些bug<br>
-详细可参考：
+详细可参考：<br>
 <a href="https://www.icinga.org/icinga/icinga-1/features/">https://www.icinga.org/icinga/icinga-1/features/</a><br>
 <a href="https://www.icinga.org/icinga/icinga-2/architecture/">https://www.icinga.org/icinga/icinga-2/architecture/</a><br>
 下面基于Centos7来安装Icinga1：</p>
@@ -30,11 +30,11 @@
 <p> <br/>
 <strong>一、安装LAMP环境<br></strong>
 <strong>1.安装apache和php <br></strong>
-yum -y install httpd php php-pear php-xmlrpc php-xsl php-soap php-mysql php-pdo  php-gd php-mbstring<br>
-防火墙放行httpd服务
-firewall-cmd &mdash;add-service=http (临时放行)<br>
-firewall-cmd &mdash;permanent &mdash;add-service=http（永久放行，写入配置文件，系统重启后依然有效）<br>
-systemctl start http.service<br></p>
+&emsp;&emsp;yum -y install httpd php php-pear php-xmlrpc php-xsl php-soap php-mysql php-pdo  php-gd php-mbstring<br>
+防火墙放行httpd服务<br>
+&emsp;&emsp;firewall-cmd &mdash;add-service=http (临时放行)<br>
+&emsp;&emsp;firewall-cmd &mdash;permanent &mdash;add-service=http（永久放行，写入配置文件，系统重启后依然有效）<br>
+&emsp;&emsp;systemctl start http.service<br></p>
 
 <pre><code>vim /var/www/html/info.php
 &lt;?php
@@ -89,7 +89,8 @@ systemctl start httpd
 
 <blockquote><p>Icinga官方文档 :<a href="http://docs.icinga.org">http://docs.icinga.org</a><br>
 Icinga EPEL :<a href="http://packages.icinga.org/epel">http://packages.icinga.org/epel</a><br>
-Icinga安装包及vagrant box下载 ：<a href="https://www.icinga.org/download">https://www.icinga.org/download</a></p></blockquote>
+Icinga安装包及vagrant box下载 ：<a href="https://www.icinga.org/download">https://www.icinga.org/download</a>
+Centos7网络配置和服务管理参考: <a href="http://simlinux.com/blog/2014/08/12/centos7wang-luo-pei-zhi-he-fu-wu-guan-li/">http://simlinux.com/blog/2014/08/12/centos7wang-luo-pei-zhi-he-fu-wu-guan-li/</a></p></blockquote>
 ]]></content>
   </entry>
   
