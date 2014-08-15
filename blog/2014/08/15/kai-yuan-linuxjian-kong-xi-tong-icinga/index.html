@@ -95,8 +95,9 @@
 
 
 <div class="entry-content"><p>&emsp;&emsp;其实Icinga是Nagios监控的一个分支，有两个分支版本Icinga1和Icinga2；Icinga除了完全兼容Nagios的插件和扩展甚至配置文件，在web接口和报告上有很大的改进，并且简化了插件的开发；Icinga1和Nagios的基础监控类似，增加了一些新的特性和修复了Nagios的一些bug<br>
-&emsp;&emsp;详细可参考：<a href="https://www.icinga.org/icinga/icinga-1/features/">https://www.icinga.org/icinga/icinga-1/features/</a><br>
-&emsp;&emsp;&emsp;&emsp;<a href="https://www.icinga.org/icinga/icinga-2/architecture/">https://www.icinga.org/icinga/icinga-2/architecture/</a>
+详细可参考：
+<a href="https://www.icinga.org/icinga/icinga-1/features/">https://www.icinga.org/icinga/icinga-1/features/</a><br>
+<a href="https://www.icinga.org/icinga/icinga-2/architecture/">https://www.icinga.org/icinga/icinga-2/architecture/</a><br>
 下面基于Centos7来安装Icinga1：</p>
 
 <!--more-->
@@ -105,13 +106,11 @@
 <p> <br/>
 <strong>一、安装LAMP环境<br></strong>
 <strong>1.安装apache和php <br></strong>
- yum -y install httpd php php-pear php-xmlrpc php-xsl php-soap php-mysql php-pdo  php-gd php-mbstring</p>
-
-<p>防火墙放行httpd服务
-firewall-cmd &mdash;add-service=http (临时放行)
-firewall-cmd &mdash;permanent &mdash;add-service=http（永久放行，写入配置文件，系统重启后依然有效）</p>
-
-<p>systemctl start http.service</p>
+yum -y install httpd php php-pear php-xmlrpc php-xsl php-soap php-mysql php-pdo  php-gd php-mbstring<br>
+防火墙放行httpd服务
+firewall-cmd &mdash;add-service=http (临时放行)<br>
+firewall-cmd &mdash;permanent &mdash;add-service=http（永久放行，写入配置文件，系统重启后依然有效）<br>
+systemctl start http.service<br></p>
 
 <pre><code>vim /var/www/html/info.php
 &lt;?php
@@ -164,9 +163,9 @@ systemctl start httpd
 
 <p><strong>相关资源</strong>：</p>
 
-<blockquote><p><a href="http://docs.icinga.org/">Icinga官方文档</a> :<a href="http://docs.icinga.org">http://docs.icinga.org</a><br>
-<a href="http://packages.icinga.org/epel/">Icinga EPEL</a> :<a href="http://packages.icinga.org/epel">http://packages.icinga.org/epel</a><br>
-<a href="https://www.icinga.org/download">Icinga安装包及vagrant box下载</a> ：<a href="https://www.icinga.org/download">https://www.icinga.org/download</a></p></blockquote>
+<blockquote><p>Icinga官方文档 :<a href="http://docs.icinga.org">http://docs.icinga.org</a><br>
+Icinga EPEL :<a href="http://packages.icinga.org/epel">http://packages.icinga.org/epel</a><br>
+Icinga安装包及vagrant box下载 ：<a href="https://www.icinga.org/download">https://www.icinga.org/download</a></p></blockquote>
 </div>
 
 
